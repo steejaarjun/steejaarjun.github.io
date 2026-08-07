@@ -1,4 +1,43 @@
 ---
+/**
+ * The day, as a timeline.
+ *
+ * The one moving part is the ochre rail, which draws itself downward when the
+ * list is reached — see the long note above the keyframes for what it does and
+ * why it is a wipe rather than a dash offset.
+ *
+ * It is triggered by its own observer at the foot of this file rather than by
+ * the shared `[data-anim]` one in index.astro, and that is deliberate. That
+ * observer is backed by a dead man's switch which strips the `js` class 2.5s
+ * after `load` so that no photograph can stay hidden; the schedule sits far
+ * enough down the page that almost nobody reaches it inside 2.5s, so the rail
+ * would reliably be found already drawn. A start state that the reader never
+ * sees is worse than no animation, so this one keeps its own trigger with no
+ * timer on it — the rail carries no content, so nothing is at risk if it never
+ * plays.
+ *
+ * WHY THE SCRIPT HAS TWO WAYS IN
+ * ---------------------------------------------------------------------------
+ * An IntersectionObserver's opening delivery needs the document to actually be
+ * rendered, and a view that never composites a frame — a prerender, a
+ * backgrounded tab, an automation harness driving an occluded window — may
+ * never get one. That was watched happening here rather than imagined: list
+ * fully inside the viewport, `--armed` on the <ol>, `--play` never added, so
+ * the rail sat clipped to nothing and both dots at zero opacity. It rights
+ * itself the instant the tab is genuinely looked at, because the observer then
+ * delivers — but "it comes back when you look at it" is not the standard this
+ * page holds hidden states to, and the whole reason the rail is armed by script
+ * is so that it is only ever hidden where it can also be shown.
+ *
+ * So geometry at DOMContentLoaded sits underneath the observer as a floor. It
+ * asks nothing of the renderer — only that the document has been parsed — and
+ * it covers the case that is common rather than exotic: a reload keeps its
+ * scroll position, and /#schedule lands a guest directly on this list, so
+ * "already on screen when the script runs" is the ordinary way to arrive here.
+ *
+ * The script itself stays terse because `is:inline` ships it byte for byte,
+ * comments and all. That is what this block is for.
+ */
 import {
   EVENTS,
   WEDDING_DATE,
@@ -266,4 +305,123 @@ const offset = utcOffset();
       transition: none;
     }
   }
+
+  /* The rail draws itself downward.
+     -------------------------------------------------------------------------
+     Asked for as `stroke-dashoffset` from full to zero, which is how an SVG
+     path is drawn on. This rail is not a path. It is a 1px pseudo-element
+     whose ends deliberately overhang their row by `--gap` so that consecutive
+     segments meet exactly at the border box, with the first starting on its dot
+     and the last stopping on its own — geometry that a single SVG line could
+     only reproduce by measuring the rows in script. So the same event is
+     written the CSS way instead: a wipe that uncovers the stroke from the top
+     down. What the eye is given is the same thing a dash offset gives it — a
+     line arriving end to end, rather than a line fading in all at once.
+
+     `clip-path` rather than `scaleY`, and that is not a preference. The stroke
+     is centred with `transform: translateX(-50%)`, and a transform written here
+     would replace that translation rather than add to it, leaving the line half
+     a pixel off centre. `clip-path` composes with the existing transform
+     instead of competing for the property, and it is already this page's idiom
+     for a wipe — see `[data-anim='img']` in global.css.
+
+     The 1.6s is the total for the whole rail, not for each piece of it, so the
+     pair reads as one pen travelling down the page: segment one runs 0 -> 0.85s
+     and segment two starts at 0.75s and lands at 1.6s. The 0.1s of overlap is
+     the tail of the first segment's easing, where the line has visually already
+     arrived; without it there is a small but readable pause in mid-air between
+     the two dots.
+
+     The `:nth-child` stagger hard-codes two entries because EVENTS in
+     src/data/wedding.ts holds exactly two — the Mass and the Reception. A third
+     event would draw on the first segment's timing and would want a third step
+     written here.
+
+     Fully drawn is the resting state. Both segments and both dots are authored
+     where they end up, so with no script, a broken script, an old browser or
+     reduced motion the rail is simply a finished rail. The undrawn state exists
+     only inside the class the script at the foot of this file adds, and it only
+     adds that class once it has confirmed it can also play it. */
+
+  /* Both ends of both curves are written out, and that is not verbosity. A
+     keyframe list with only a `from` takes its other end from the element's
+     underlying computed style — which here is the armed rule below, the undrawn
+     one — so a `from`-only draw would run from hidden to hidden and leave the
+     rail wiped out for good. Naming the `to` makes the animation say what it
+     means whatever the cascade underneath it happens to be. `inset(0 0 0 0)` is
+     the border box of a 1px line, so the finished state clips away nothing. */
+  @keyframes schedule-draw {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  @keyframes schedule-dot {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .schedule__list--armed .schedule__rail::before {
+      clip-path: inset(0 0 100% 0);
+    }
+
+    /* Opacity only. A dot that scales into place draws the eye to itself rather
+       than to the line arriving, and animating its width or height would be a
+       layout change on a 7px box. */
+    .schedule__list--armed .schedule__dot {
+      opacity: 0;
+    }
+
+    .schedule__list--play .schedule__rail::before {
+      animation: schedule-draw 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .schedule__list--play .schedule__item:nth-child(2) .schedule__rail::before {
+      animation-delay: 0.75s;
+    }
+
+    /* The first dot is under the pen as it touches down; the second is lit just
+       before the stroke settles on it. Two dots, so two steps and no cascade. */
+    .schedule__list--play .schedule__dot {
+      animation: schedule-dot 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .schedule__list--play .schedule__item:nth-child(2) .schedule__dot {
+      animation-delay: 1.4s;
+    }
+  }
 </style>
+
+{/* Terse on purpose: `is:inline` ships byte for byte, comments included, so
+    every line of explanation here is a line every guest downloads. The
+    reasoning lives in the frontmatter at the top of this file, which does not
+    ship at all. */}
+<script is:inline>
+  /* Two ways in; see the header. */
+  (function () {
+    var l = document.querySelector('.schedule__list');
+    if (!l || !window.IntersectionObserver ||
+      matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    l.classList.add('schedule__list--armed');
+    function play() {
+      o.disconnect();
+      l.classList.add('schedule__list--play');
+    }
+    var o = new IntersectionObserver(function (e) {
+      if (e[0].isIntersecting) play();
+    }, { rootMargin: '0px 0px -15%' });
+    o.observe(l);
+    addEventListener('DOMContentLoaded', function () {
+      var b = l.getBoundingClientRect();
+      if (b.top < innerHeight && b.bottom > 0) play();
+    });
+  })();
+</script>
