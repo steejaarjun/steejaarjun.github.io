@@ -22,6 +22,12 @@ import shoePhoto from '../assets/photos/gallery/EPK03357.jpg';
    inside the bubble, at the same contrast as every other heading on the site. */
 import headerPhoto from '../assets/photos/gallery/EPW09924.jpg';
 
+/* The little drawn flower at the corner of the print below. Shared with
+   Story.astro, which pins its photograph with the same mark at the opposite
+   corner — one file so it stays one drawing. It carries no position of its own;
+   see the note in there for why the placing is left to us. */
+import PinFlower from './PinFlower.astro';
+
 /**
  * Flat, single-weight line silhouettes on a 240x320 canvas. Drawn here rather
  * than pulled from an icon set so the line weight and proportions match the
@@ -205,6 +211,28 @@ const ILLUSTRATION: Record<string, { alt: string; paths: string[] }> = {
           loading="lazy"
           decoding="async"
         />
+        {/* Top-left, for two reasons, and the tilt is the second of them.
+
+            It is the inward corner. Above 1000px the print is the right-hand
+            column, so its top-left faces back into the swatches and the mark is
+            found on the way past them; its top-right sits out on the page's
+            outer margin with nothing around it, which is where a small drawing
+            goes to look like an accident.
+
+            And the mount is laid down at -2.5deg, which — CSS angles being
+            clockwise-positive — is anticlockwise, so it is the LEFT of the two
+            top corners that has dropped and the right that has lifted. Pinning
+            the low one reads as the print having settled around a tack; pinning
+            the high one reads as a picture hung from a nail, which is a more
+            literal and much less casual thing than this section wants. It is
+            also the corner that rises when the mount straightens itself on
+            hover, so the print's unwinding and the pin's own give happen in the
+            same place rather than at opposite ends of the frame.
+
+            Story.astro takes the top-right, both to keep two identical marks
+            from reading as a rule and because over there the mirrored layout
+            makes the right the inward one. */}
+        <span class="dress__pin"><PinFlower /></span>
         <figcaption class="dress__print-caption">first steps, together</figcaption>
       </figure>
     </div>
@@ -655,6 +683,14 @@ const ILLUSTRATION: Record<string, { alt: string; paths: string[] }> = {
   }
 
   .dress__print {
+    /* The containing block for the pin. The rotation below already makes one —
+       a transform does that for absolutely positioned descendants too, not just
+       for fixed ones — so this line changes nothing today. It is here because
+       the day somebody decides the print should sit straight and deletes the
+       rotate, the pin would silently fly off to the corner of whichever
+       ancestor happened to be positioned, and that is not a trap worth leaving
+       behind for a single declaration. */
+    position: relative;
     /* The mount, not the photograph: shell all round, even on three sides and
        roughly double at the foot, which is the proportion that reads as a
        print rather than as a bordered image. */
@@ -701,6 +737,58 @@ const ILLUSTRATION: Record<string, { alt: string; paths: string[] }> = {
     line-height: 1.2;
     text-align: center;
     color: var(--color-muted);
+  }
+
+  /* The pin.
+     -----------------------------------------------------------------------
+     Sat 2px in from the mount's outside edge, and the mount is 10px of shell on
+     that side, so the 22px box straddles the photograph's own top-left corner:
+     the head lands on the corner and the stem falls inside, onto the print. That
+     overlap is the whole difference between a flower pinning the photograph and
+     a flower sitting politely next to it.
+
+     Out of flow, so it reserves nothing and cannot move a pixel of the layout,
+     and `pointer-events: none` so the mark never intercepts the hover that
+     belongs to the figure underneath it. It needs no z-index — a positioned
+     element paints above its unpositioned siblings, and the photograph is
+     one. */
+  .dress__pin {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    pointer-events: none;
+    /* The head, not the middle of the box. A pin gives at the point it is stuck
+       through, and the flower's centre sits at 36% of the box's height, so
+       rotating about that keeps the head still and swings the stem. */
+    transform-origin: 50% 36%;
+  }
+
+  /* The give.
+     -----------------------------------------------------------------------
+     Both the movement and the transition that carries it live inside this one
+     query, rather than being written out plainly and switched off afterwards.
+     Under `reduce` — or where the query is not understood at all — there is then
+     no transition to inherit and no hover rule to fire, and the pin is simply a
+     drawn flower.
+
+     `(hover: hover) and (pointer: fine)` rather than the looser `any-hover`
+     above: the mount straightening itself is a state a phone can stumble into
+     and sit in harmlessly, but a mark that quietly rotates and stays rotated is
+     just a crooked drawing, so a touch device is offered nothing at all here.
+
+     `rotate`, the independent property, in the same spirit as the `translate`
+     and `scale` in global.css — it leaves the pin's `transform` slot free for
+     anyone who needs it later. It composes with the mount unwinding from -2.5deg
+     to 0 by nesting, the two being on different elements, and the pair reads
+     right: the print settles flat while the pin takes up the slack. */
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+    .dress__pin {
+      transition: rotate 250ms ease;
+    }
+
+    .dress__print:hover .dress__pin {
+      rotate: 3deg;
+    }
   }
 
   .dress__avoid-note {

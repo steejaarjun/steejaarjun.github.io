@@ -3,6 +3,11 @@ import { Picture } from 'astro:assets';
 // Derived 4:5 master, not the 5760x8640 original — Astro copies an imported
 // original into `dist/` alongside its transforms. See scripts/prepare-media.mjs.
 import storyPhoto from '../assets/photos/EPW00926-4x5.jpg';
+/* The little drawn flower at the corner of the photograph below. Shared with
+   Dresscode.astro, which pins its print with the same mark at the opposite
+   corner — one file so it stays one drawing. It carries no position of its own;
+   see the note in there for why the placing is left to us. */
+import PinFlower from './PinFlower.astro';
 
 /**
  * The bride's own words, verbatim. This replaced the placeholder wording the
@@ -63,6 +68,19 @@ export const STORY_COPY = {
         loading="eager"
         decoding="async"
       />
+      {/* Top-right — the opposite corner to the one on the dress code's print,
+          deliberately. There are only two of these on the whole page and they
+          are the same drawing; put them both in the same corner and they stop
+          being two things somebody pinned and start being a rule that was
+          applied. Right is also the inward corner here, which is the mirror of
+          the reasoning over there: above 900px this photograph is the left
+          column and the prose is the right, so the mark sits in the gutter
+          between them and is found on the way to the words rather than out on
+          the page's outer margin. There is no mount on this one — the figure's
+          edge is the photograph's edge — so the box is pulled out 5px to lap
+          the corner instead of tucked in. Its twin, and the drawing itself, are
+          in PinFlower.astro. */}
+      <span class="story__pin"><PinFlower /></span>
       <figcaption class="story__caption">Photo: Eden Park Weddings</figcaption>
     </figure>
 
@@ -106,6 +124,11 @@ export const STORY_COPY = {
 
   .story__media {
     margin: 0;
+    /* The containing block for the pin at the photograph's top-right corner.
+       Nothing here has ever needed one before, which is why it was not already
+       written — with no offsets of its own it moves nothing, and a grid item is
+       laid out identically either way. */
+    position: relative;
   }
 
   .story__photo {
@@ -126,6 +149,53 @@ export const STORY_COPY = {
     font-size: 0.8rem;
     line-height: 1.6;
     color: var(--color-muted);
+  }
+
+  /* The pin.
+     -----------------------------------------------------------------------
+     Pulled 5px out past the corner, so about three quarters of the 22px box is
+     over the photograph and the head crosses its top edge. That overlap is the
+     whole difference between a flower pinning the picture and a flower placed
+     beside it. The overhang is far smaller than `.story__inner`'s padding, which
+     never falls below 3.5rem, so it has plenty of room to hang into and cannot
+     push the section sideways.
+
+     Out of flow, so it reserves nothing and cannot move a pixel of the layout,
+     and `pointer-events: none` so it never intercepts anything. It needs no
+     z-index — a positioned element paints above its unpositioned siblings, and
+     the photograph is one. */
+  .story__pin {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    pointer-events: none;
+    /* The head, not the middle of the box. A pin gives at the point it is stuck
+       through, and the flower's centre sits at 36% of the box's height, so
+       rotating about that keeps the head still and swings the stem. */
+    transform-origin: 50% 36%;
+  }
+
+  /* The give.
+     -----------------------------------------------------------------------
+     Both the movement and the transition that carries it live inside this one
+     query, rather than being written out plainly and switched off afterwards.
+     Under `reduce` — or where the query is not understood at all — there is then
+     no transition to inherit and no hover rule to fire, and the pin is simply a
+     drawn flower, which is the resting state and the correct one.
+
+     `(hover: hover) and (pointer: fine)` rather than the looser `any-hover`: a
+     mark that quietly rotates on first touch and then stays rotated is not a
+     hover, it is a crooked drawing, so a touch device is offered nothing at all.
+     Three degrees over a 22px mark is a couple of pixels at the tip of the stem
+     — it should be felt rather than watched. */
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+    .story__pin {
+      transition: rotate 250ms ease;
+    }
+
+    .story__media:hover .story__pin {
+      rotate: 3deg;
+    }
   }
 
   .story__eyebrow {

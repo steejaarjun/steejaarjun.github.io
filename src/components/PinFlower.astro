@@ -1,0 +1,88 @@
+---
+/**
+ * A small drawn flower, used as a pin at the corner of a photograph.
+ *
+ * It appears in exactly two places — the polaroid beside the dress code and the
+ * Our Story photograph — and it lives in its own file rather than being written
+ * out twice so that it stays one drawing. Two copies of a `d` attribute are two
+ * different drawings the moment anybody edits one of them and not the other.
+ *
+ * This component draws and does nothing else. It owns the geometry, the stroke
+ * and its own 22px box; it owns no position at all. Which corner it sits in, how
+ * far it laps over the photograph's edge and what happens on hover are the host
+ * section's business, because they differ in the two places and depend on things
+ * only the host knows — a mount's 10px of shell on one, a bare 4:5 frame on the
+ * other. Each host therefore wraps this in an absolutely positioned element of
+ * its own, which has the second virtue of keeping that positioning inside the
+ * host's own style scope instead of reaching across a component boundary to
+ * style somebody else's root element.
+ *
+ * The drawing. Five petals are a single path: each is one cubic that leaves the
+ * centre and comes straight back to it, so the whole head is an M and five Cs
+ * and the loops are symmetric teardrops without a single coordinate being
+ * guessed. A small circle sits over the point where all five pinch together — at
+ * this size ten line ends meeting is a blot, and a drawn flower wants an eye
+ * there anyway.
+ *
+ * The stem is one quadratic, and where it BEGINS is the only fussy number here.
+ * Five petals spaced 72deg apart, drawn this plump, leave the centre at almost
+ * exactly 36deg either side of their own axis — so the lobes fill the full turn
+ * and there is no wedge at the centre for a stem to come out of. The two lower
+ * petals' inner edges in fact run down the vertical axis for the first three
+ * units, which is precisely where a stem drawn from the centre would go, and
+ * three coincident hairlines is a smudge rather than a drawing. So the stem
+ * starts at 11.4 instead — a third of a unit inside the head's lower silhouette,
+ * which at a 1px stroke is touching it, so the join reads as a join and every
+ * point below it is clear of every petal. Those first three units are then drawn
+ * by the petals themselves, which is no loss: a flower has a thicker neck under
+ * the head.
+ *
+ * Line only: no fill, 1px ochre, and `vector-effect: non-scaling-stroke` so the
+ * weight holds however the box is scaled, which is the same idiom as Rings and
+ * LineArt.
+ *
+ * `aria-hidden`, and both hosts place it out of flow, so it is in no reading
+ * order, takes no pointer and reserves no space.
+ */
+---
+
+<svg
+  class="pin-flower"
+  viewBox="0 0 24 24"
+  width="22"
+  height="22"
+  fill="none"
+  aria-hidden="true"
+  focusable="false"
+>
+  <path
+    class="pin-flower__petals"
+    d="M12 8.6C18.2 0.2 5.8 0.2 12 8.6C21.91 11.9 18.07 0.11 12 8.6C11.92 19.04 21.95 11.75 12 8.6C2.05 11.75 12.08 19.04 12 8.6C5.93 0.11 2.1 11.9 12 8.6"
+  ></path>
+  <circle class="pin-flower__eye" cx="12" cy="8.6" r="1.5"></circle>
+  <path class="pin-flower__stem" d="M12 11.4Q13.15 17.4 11.4 22.6"></path>
+</svg>
+
+<style>
+  .pin-flower {
+    display: block;
+    /* Fixed rather than fluid. It is a mark of a particular size, not a picture
+       that should grow with what it is pinned to — and a fixed box is one less
+       thing that can be measured differently on two different photographs. */
+    width: 22px;
+    height: 22px;
+  }
+
+  .pin-flower path,
+  .pin-flower circle {
+    fill: none;
+    stroke: var(--color-ochre);
+    /* Held at 1px whatever the box does, exactly as in Rings — the flower is
+       drawn on a 24 unit grid and rendered at 22px, so without this the line
+       would come out a hair under a pixel and go grey. */
+    stroke-width: 1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+</style>
