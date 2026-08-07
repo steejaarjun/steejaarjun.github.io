@@ -3,7 +3,7 @@
 One-page wedding site for 6 September 2026, Akaparambu &amp; Nedumbassery, Kerala.
 
 **Built so far: the hero, the countdown, Our Story, the Schedule, the Venues,
-the Dress code, Travel & stay, Moments, Q&A, the reply form and Contact.** Every
+the Dress code, Moments, Q&A, the reply form and Contact.** Every
 link in the top bar resolves, and so does `#rsvp` — the hero button and the top
 bar's "Let us know" pill both point at the reply form, which sits between Q&A
 and Contact.
@@ -33,32 +33,29 @@ from it. The set deliberately mixes black and white with colour and portrait
 with landscape; nothing normalises that, and the one landscape frame spans two
 columns above 640px.
 
-Two full-bleed `ImageBand`s break the page out of its content column — one
-carrying the couple's thank-you between Our Story and the Schedule, one silent
-between Travel and Moments. A fixed feTurbulence grain layer sits over the whole
-page at 3.5%; both are described where they are defined
-(`src/components/ImageBand.astro`, `src/styles/global.css`).
+One full-bleed `ImageBand` breaks the page out of its content column, carrying
+the couple's thank-you between the Schedule and the Venues. A fixed feTurbulence
+grain layer sits over the whole page at 3.5%; both are described where they are
+defined (`src/components/ImageBand.astro`, `src/styles/global.css`).
 
 ### Copy still to be written
 
-Four placeholders render as a visible `<!-- COPY TODO -->` marker in a monospace
-face — deliberately unmissable, because an empty paragraph under a heading reads
-as a bug and an invisible marker is one that ships.
+There is no Travel & stay section. It was built and then removed, along with
+`src/components/Travel.astro` and `src/data/travel.ts`; this section used to
+list four `<!-- COPY TODO -->` placeholders in those files and outlived them.
+Nothing about flights, drive times, taxi fares, distances or visa rules is
+written anywhere in the project, and nothing was ever written speculatively.
 
-| file | line | what goes here |
-| --- | --- | --- |
-| `src/components/Travel.astro` | 35 | Flying from Switzerland |
-| `src/components/Travel.astro` | 39 | Travelling within India |
-| `src/components/Travel.astro` | 88 | Getting around |
-| `src/components/Travel.astro` | 92 | Weather in September |
+What is genuinely still open, all of it data rather than prose:
 
-Open TODOs in data: `src/data/travel.ts:38` (`HOTELS` is empty),
-`src/data/wedding.ts:43` and `:55` (venue coordinates), and the commented-out
-children group in `src/data/dresscode.ts`.
+| file | what is missing |
+| --- | --- |
+| `src/data/wedding.ts:43` | church coordinates, as `{ lat, lng }` |
+| `src/data/wedding.ts:55` | reception coordinates, as `{ lat, lng }` |
+| `src/data/dresscode.ts` | the children's group, present but commented out |
 
-Nothing about flights, drive times, taxi fares, distances or visa rules was
-written speculatively. The entry-requirements line links to the official portal
-and states nothing that could go stale.
+`LAUNCH.md` step 3 is the same list with the two FAQ answers that need reading
+and approving. Keep the two in step, or delete this table and point at it.
 
 `src/data/dresscode.ts` holds the three guest groups and the two colours to
 avoid. **A fourth group for children is present but commented out** — the couple
@@ -577,10 +574,15 @@ real reply into the real guest list.
 Both of these are project settings, not migrations, so they are recorded here:
 
 1. **Email confirmations: OFF.** The admin address is
-   `admin@steeja-arjun.invalid`, a non-routable placeholder on the reserved
-   `.invalid` TLD. It has no inbox, so a confirmation mail could never be
-   answered. Dashboard → Authentication → Providers → Email → uncheck
+   `steejaarjun@wedding.com`. It is an identifier, not a mailbox — nobody here
+   controls `wedding.com` and no mail sent to it can be read, let alone
+   answered, so a confirmation step would lock the only account out of the guest
+   list permanently. Dashboard → Authentication → Providers → Email → uncheck
    "Confirm email".
+
+   Because it is not a deliverable address, **password reset by email cannot
+   work either.** The password is recoverable only from the password manager, or
+   by resetting it in the Supabase dashboard. See `LAUNCH.md` step 1.
 2. **Public sign-ups: DISABLED.** There must be exactly one account, forever.
    Dashboard → Authentication → Sign In / Providers → "Allow new users to sign
    up" → off. With this off, the `authenticated` RLS policies (`using (true)`)

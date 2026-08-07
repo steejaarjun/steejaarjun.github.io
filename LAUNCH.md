@@ -20,6 +20,11 @@ built, so treat it as public.
    it — a stale saved password is what made sign-in look broken once already.
 3. Sign in at `/admin` once to confirm the new one works.
 
+The dashboard is the **only** way to reset it. `steejaarjun@wedding.com` is an
+identifier rather than a mailbox — nobody here controls `wedding.com` — so the
+"forgot password" email goes somewhere unreadable. Keep the new password in a
+password manager; there is no other copy and no way to mail one to yourself.
+
 ## 2. Bookmark `/admin`
 
 There is no link to it from the site and no keyboard route into it. The way in
@@ -71,15 +76,7 @@ Neither could be verified from this machine. Both are quick.
 11. `/admin` — tick two rows with Space, tab to "Delete 2 replies", confirm the
     dialog puts focus in the type-to-confirm field and that Escape cancels.
 
-## 5. Correct the README before anyone else reads it
-
-`README.md` has a "Copy still to be written" section listing four placeholders
-in `src/components/Travel.astro` and an empty `src/data/travel.ts`. Neither file
-exists any more — there is no Travel section in the project. Delete the section
-or rewrite it to point at the four items in step 3, whichever is true of where
-the project is going.
-
-## 6. Last look before sharing the link
+## 5. Last look before sharing the link
 
 - `/admin` shows "No entries yet" and the counters are all zero.
 - Send one real reply from a phone, on mobile data rather than wifi, and check
