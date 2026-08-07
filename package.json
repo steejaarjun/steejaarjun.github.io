@@ -12,6 +12,8 @@
     "postbuild": "npm run prune",
     "prune": "node scripts/prune-dist.mjs",
     "preview": "astro preview",
+    "//verify": "Asserts every internal link and asset in dist/ resolves at the deploy root, with no doubled path and no host the site used to live on. Run it after a clean build, before pushing to a new host — the failure it catches renders a page that looks merely unstyled.",
+    "verify": "node scripts/check-links.mjs",
     "astro": "astro",
     "media": "node scripts/prepare-media.mjs",
     "//brand": "Regenerates the link-preview card, the favicons, the touch icon and the manifest from the photo, the palette and the display font. Outputs are committed, so a deploy never runs this — re-run it after changing any of those three.",

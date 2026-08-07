@@ -14,10 +14,13 @@ import { loadEnv } from 'vite';
  * happened once already on GitHub Pages, where the three are repository
  * variables that a fork or a renamed variable silently drops.
  *
- * It is a likelier failure on Cloudflare Pages, not a less likely one, because
- * build-time variables there live only in the dashboard — they cannot be
- * committed alongside the code, so nothing in this repository proves they were
- * set. This is what replaces that proof.
+ * The move to a new repository is exactly when it happens: repository variables
+ * do NOT travel with the code. Pushing this repository to
+ * steejaarjun/steejaarjun.github.io copies every file and none of the three
+ * variables, so the first Actions run on the new repository starts with all
+ * three unset. Nothing in this repository can prove they were set — this is
+ * what replaces that proof, and it is why the first deploy there fails loudly
+ * instead of shipping a dead form.
  *
  * Build only. `astro dev` stays usable without a .env, which is how somebody
  * new to the project reads the layout without being handed keys first.
@@ -52,35 +55,49 @@ function requirePublicEnv() {
             'function URL and the Turnstile key — a form that looks right and\n' +
             'cannot send.\n\n' +
             '  Locally         copy .env.example to .env and fill it in\n' +
-            '  Cloudflare Pages  Workers & Pages > steeja-arjun >\n' +
+            '  GitHub Actions  github.com/steejaarjun/steejaarjun.github.io >\n' +
+            '                    Settings > Secrets and variables > Actions >\n' +
+            '                    Variables tab > New repository variable\n' +
+            '  Cloudflare Pages  (parked) Workers & Pages > steeja-arjun >\n' +
             '                    Settings > Environment variables, for BOTH\n' +
-            '                    Production and Preview\n' +
-            '  GitHub Actions  repository Settings > Secrets and variables >\n' +
-            '                    Actions > Variables\n',
+            '                    Production and Preview\n',
         );
       },
     },
   };
 }
 
-// Deployed to Cloudflare Pages, which serves the project at the ROOT of its own
-// hostname. There is no `base` any more and there must not be one: it was
-// `/wedding-steeja-arjun` for GitHub Pages, which is a *project* site and puts
-// every repository under a path. A leftover base here produces
-// `/wedding-steeja-arjun/wedding-steeja-arjun/...` on the new host, which 404s
-// while looking like a routing bug rather than a config one.
+// Deployed to GitHub Pages as a USER site — the repository is named
+// `steejaarjun.github.io`, and GitHub serves a repository of that name at the
+// ROOT of the account's hostname rather than under a path.
+//
+// THERE IS NO `base` KEY BELOW AND THERE MUST NOT BE ONE. This has now been the
+// wrong thing twice, in opposite directions, so it is worth being exact about
+// which kind of GitHub Pages site this is:
+//
+//   PROJECT site   github.com/<user>/<repo>      -> <user>.github.io/<repo>/
+//                  needs base: '/<repo>'
+//   USER site      github.com/<user>/<user>.github.io -> <user>.github.io/
+//                  needs NO base
+//
+// This is the second. The first arrangement is what `/wedding-steeja-arjun` was
+// for, and a leftover base of that shape here produces
+// `/wedding-steeja-arjun/_astro/...` against a host that serves `/_astro/...`,
+// which 404s every asset while the HTML still renders — so it fails looking
+// like a styling bug rather than a routing one. That is the failure this
+// comment exists to prevent.
 //
 // `src/lib/paths.ts` (withBase) still stands between hand-written paths and the
-// deploy root, and it now resolves to `/`. It is kept rather than deleted so
-// that moving under a path again is one line here instead of an audit of every
-// href in the project.
+// deploy root, and it resolves to `/`. It is kept rather than deleted so that
+// moving under a path again is one line here instead of an audit of every href
+// in the project.
 //
-// THE OLD HOST IS STILL LIVE. GitHub Pages continues to serve the last build it
-// received, which carries the old base and works. What it cannot do is take a
-// NEW build from this config — see the note at the top of
-// .github/workflows/deploy.yml before re-running it.
+// Cloudflare Pages is PARKED, not deleted. wrangler.toml stays in the
+// repository and is inert: a Pages project only builds when Cloudflare's git
+// integration is connected to a repository, and this one is not connected to
+// the new repository. Nothing in that file reacts to a push here.
 export default defineConfig({
-  site: 'https://steeja-arjun.pages.dev',
+  site: 'https://steejaarjun.github.io',
   output: 'static',
   trailingSlash: 'ignore',
   build: {

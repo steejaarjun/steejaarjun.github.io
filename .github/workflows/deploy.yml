@@ -1,46 +1,51 @@
-name: Deploy to GitHub Pages (disabled — fallback only)
+name: Deploy to GitHub Pages
 
 # ---------------------------------------------------------------------------
-# DISABLED, NOT DELETED. Hosting moved to Cloudflare Pages; this stays as the
-# way back if that goes wrong.
+# THE LIVE DEPLOY. This is how https://steejaarjun.github.io/ gets built.
 #
-# The `push` trigger is gone and `workflow_dispatch` is kept, so this only ever
-# runs when a person presses "Run workflow" on the Actions tab. Nothing here is
-# scheduled and nothing reacts to a commit.
-#
-# The existing GitHub Pages deployment is NOT affected by this and is still
-# live: Pages keeps serving the last artifact it received, which was built with
-# `base: '/wedding-steeja-arjun'` and works. Both hosts run in parallel until
-# the Cloudflare one is verified.
+# It belongs to the repository steejaarjun/steejaarjun.github.io — a GitHub
+# Pages USER site, served at the root of the account's hostname with NO path
+# prefix. astro.config.mjs therefore has `site` set and no `base` at all; see
+# the comment there before adding one.
 #
 # ---------------------------------------------------------------------------
-# READ THIS BEFORE PRESSING "RUN WORKFLOW"
+# TWO THINGS THIS FILE CANNOT DO FOR ITSELF
 # ---------------------------------------------------------------------------
-# Running it as-is would REPLACE the working GitHub Pages site with a broken
-# one. `base` has been removed from astro.config.mjs, so a build from `main`
-# today emits root-absolute paths (`/rsvp`, `/_astro/…`) while GitHub Pages
-# still serves this repository from `/wedding-steeja-arjun/`. Every asset and
-# every link would 404 — and the site would still render its HTML, so it fails
-# looking like a styling bug rather than a routing one.
+# Both are one-time settings on the repository, and both fail in a way that
+# looks like a bug in this file rather than a missing setting:
 #
-# To actually fall back, restore the config first:
+#  1. Settings > Pages > Build and deployment > Source must be "GitHub Actions".
+#     If it is left on "Deploy from a branch", the `deploy` job below fails at
+#     actions/deploy-pages with an HTTP 404 on the Pages API — a message that
+#     says nothing about the setting that caused it.
 #
-#     git revert <the Cloudflare migration commit>     # or, by hand:
-#     #   astro.config.mjs   site: 'https://chirakkalcode.github.io'
-#     #                      base: '/wedding-steeja-arjun'
-#     #   public/robots.txt          both lines back to the /wedding-steeja-arjun prefix
-#     #   public/site.webmanifest    start_url, scope and the three icon srcs
-#     #   scripts/make-brand-assets.mjs   BASE = '/wedding-steeja-arjun/'
-#     #   src/layouts/Base.astro + src/pages/index.astro   the Astro.site fallback
+#  2. Settings > Secrets and variables > Actions > Variables must carry all
+#     three PUBLIC_* repository variables listed at the build step. Repository
+#     variables do NOT travel with a git push, so a freshly-created repository
+#     has none of them. `requirePublicEnv()` in astro.config.mjs fails the build
+#     when one is missing, deliberately and loudly, because the alternative is a
+#     successful build that ships a reply form which cannot send.
 #
-#     git push
-#     # then run this workflow
+# ---------------------------------------------------------------------------
+# Cloudflare Pages is PARKED, not deleted. wrangler.toml stays in the tree and
+# is inert — a Pages project builds only when Cloudflare's git integration is
+# connected to a repository, and it is not connected to this one. Nothing there
+# competes with this workflow.
 #
-# The Supabase edge function needs nothing: its CORS allowlist carries both
-# origins for exactly this reason (supabase/functions/rsvp/index.ts).
+# The Supabase edge function is NOT deployed by this workflow and never has
+# been. Its CORS allowlist must name this host or the reply form fails on it
+# with a CORS error; changing that file and pushing does nothing until
+# `npx supabase functions deploy rsvp` runs. See supabase/functions/rsvp/index.ts.
 # ---------------------------------------------------------------------------
 
 on:
+  # Every push to main publishes. This is the whole deploy pipeline — there is
+  # no staging step and no preview environment.
+  push:
+    branches: [main]
+  # Kept alongside `push` so a deploy can be re-run without an empty commit,
+  # which is what you want after setting a repository variable that the previous
+  # run was missing.
   workflow_dispatch:
 
 # Least privilege that still lets actions/deploy-pages publish.

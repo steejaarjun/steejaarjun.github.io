@@ -1,7 +1,7 @@
 /**
  * POST /functions/v1/rsvp — the only way a row reaches `public.rsvps`.
  *
- * The site is a static build on Cloudflare Pages, so there is no server of ours in
+ * The site is a static build on GitHub Pages, so there is no server of ours in
  * front of it and the anon key is public knowledge. A Turnstile token can only
  * be verified by something holding the Turnstile secret, and a static page
  * cannot hold a secret — so the verification, and therefore the write, happens
@@ -48,20 +48,26 @@ type ErrorCode =
 /**
  * Explicit, no wildcard. The deployed sites and local `astro dev`.
  *
- * TWO deployed origins on purpose, and only for as long as the move takes. The
- * site is being lifted from GitHub Pages to Cloudflare Pages and both hosts are
- * live in parallel until the new one is checked; a browser sends the page's own
- * origin, so dropping the old one here breaks the form on the old host the
- * moment this function is redeployed. Take github.io out once the couple are
- * switched over and the old deployment is retired — not before.
+ * THE LIVE ONE IS `https://steejaarjun.github.io` — the GitHub Pages user site.
+ * The other two deployed origins are hosts this site has previously lived on
+ * and which have not been torn down:
  *
- * Exact strings, so Cloudflare's preview deployments — which land on
- * `https://<hash>.steeja-arjun.pages.dev` and `https://<branch>.steeja-arjun.
- * pages.dev` — are NOT allowed, and that is deliberate rather than an
- * oversight. A preview build of a branch is exactly the thing that should not
- * be able to write a real reply into the real guest list. If a preview ever
- * needs to be tested end to end, add that one hostname here for the test and
- * take it out again.
+ *   steeja-arjun.pages.dev      Cloudflare Pages, parked (wrangler.toml is
+ *                               still in the tree but inert)
+ *   chirakkalcode.github.io     the original GitHub Pages project site, still
+ *                               serving its last artifact
+ *
+ * A browser sends the page's own origin, so removing one here breaks the form
+ * on that host the moment this function is redeployed. Drop each when its
+ * deployment is actually retired — not before.
+ *
+ * Exact strings, so no subdomain of any of them is admitted. Cloudflare's
+ * preview deployments land on `https://<hash>.steeja-arjun.pages.dev` and
+ * `https://<branch>.steeja-arjun.pages.dev` and are NOT allowed, which is
+ * deliberate rather than an oversight: a preview build of a branch is exactly
+ * the thing that should not be able to write a real reply into the real guest
+ * list. If a preview ever needs testing end to end, add that one hostname for
+ * the test and take it out again.
  *
  * REDEPLOY AFTER EDITING. This file is not part of the site build: changing it
  * and pushing does nothing until `npx supabase functions deploy rsvp` runs. A
@@ -69,6 +75,7 @@ type ErrorCode =
  * a CORS error in the console, is this list not having been redeployed.
  */
 const ALLOWED_ORIGINS = new Set([
+  'https://steejaarjun.github.io',
   'https://steeja-arjun.pages.dev',
   'https://chirakkalcode.github.io',
   'http://localhost:4321',

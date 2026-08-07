@@ -28,16 +28,20 @@ import '../styles/global.css';
     <title>Guest list</title>
 
     {/* Obscurity is not the control — RLS is — but there is no reason for this
-        to be in an index. There is no sitemap in this project to exclude it
-        from (no @astrojs/sitemap integration is configured); public/robots.txt
-        disallows the path as well, so the two agree. */}
+        to be in an index. This is one of three, and the only one a crawler
+        cannot ignore: @astrojs/sitemap is configured in astro.config.mjs and
+        filters this path out, and public/robots.txt disallows it. All three
+        agree, and all three are worth keeping — see the note in robots.txt. */}
     <meta name="robots" content="noindex, nofollow" />
     <meta name="googlebot" content="noindex, nofollow" />
 
     <meta name="theme-color" content="#FBF8F3" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#241C18" media="(prefers-color-scheme: dark)" />
-    {/* Through `withBase`, not a hand-written absolute path: this is a project
-        Pages site and the base prefix is configuration, not a constant. */}
+    {/* Through `withBase`, not a hand-written absolute path. The prefix is
+        empty today — this is a GitHub Pages USER site, served at the root — but
+        it is configuration rather than a constant, and this page is the one
+        that would be missed: it writes its own <head> instead of using
+        Base.astro, so nothing here is shared with the rest of the site. */}
     <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
     <link rel="icon" type="image/x-icon" sizes="32x32" href={withBase('favicon.ico')} />
     <link rel="apple-touch-icon" sizes="180x180" href={withBase('apple-touch-icon.png')} />

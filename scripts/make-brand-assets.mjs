@@ -219,15 +219,18 @@ console.log(`  favicon.ico                32x32     ${((22 + icoPng.length) / 10
    manifest's own location, and this file is written to public/ and served
    verbatim, so it cannot import `withBase` and cannot read Astro's BASE_URL.
 
-   `/` since the move to Cloudflare Pages, which serves the project at the root
-   of its own hostname. It was '/wedding-steeja-arjun/' for GitHub Pages, where
-   the project lived under a path.
+   `/`, because the site is a GitHub Pages USER site — the repository is named
+   `steejaarjun.github.io` and GitHub serves it at the root of the account's
+   hostname. It was '/wedding-steeja-arjun/' for the earlier PROJECT site, where
+   the repository lived under a path. It was also `/` on Cloudflare Pages, which
+   is why the move between those two hosts did not touch this line.
 
    This is one of exactly two places that carry the deploy root independently —
    the other is the file this writes, public/site.webmanifest, which is
-   committed. Keep both in step with `base` in astro.config.mjs; nothing checks
-   that they agree, and a wrong `scope` here does not break the site, it breaks
-   installing it to a home screen. */
+   committed. Keep both in step with the deploy root: `base` in astro.config.mjs
+   when there is one, and `/` when, as now, there is not. Nothing checks that
+   they agree, and a wrong `scope` here does not break the site — it breaks
+   installing it to a home screen, which nobody tests. */
 const BASE = '/';
 
 const manifest = {

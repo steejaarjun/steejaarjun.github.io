@@ -99,15 +99,23 @@ in the built HTML/CSS/JS and deletes whatever is left over.
 
 ## Deploying
 
-Hosted on **Cloudflare Pages**, at `https://steeja-arjun.pages.dev`. Cloudflare
-watches `main` and builds on every push; there is no deploy workflow in this
-repository any more.
+Hosted on **GitHub Pages**, at `https://steejaarjun.github.io/`, from the
+repository `steejaarjun/steejaarjun.github.io`. `.github/workflows/deploy.yml`
+builds on every push to `main` and publishes the artifact.
+
+This is a **user site**, not a project site, and the distinction is the whole
+reason the last two moves went wrong:
+
+| kind | repository | served at | needs `base` |
+| --- | --- | --- | --- |
+| project site | `<user>/<repo>` | `<user>.github.io/<repo>/` | yes, `/<repo>` |
+| user site | `<user>/<user>.github.io` | `<user>.github.io/` | **no** |
 
 `astro.config.mjs` hard-codes where the site will live:
 
 ```js
-site: 'https://steeja-arjun.pages.dev',
-// no `base` — Pages serves the project at the root of its own hostname
+site: 'https://steejaarjun.github.io',
+// no `base` — a user site is served at the root of the account's hostname
 ```
 
 `site` is what builds the absolute `og:image` and canonical URLs that WhatsApp
@@ -116,61 +124,91 @@ is added later, change `site` here and re-check the five items under
 *After a domain change* below — an absolute URL pointing at the old host is
 invisible on the page and only shows up in a link preview.
 
-There is **no `base`**, and that is load-bearing rather than incidental. GitHub
-Pages served this repository from `/wedding-steeja-arjun/` and every hand-written
-path carried that prefix; Cloudflare serves it from `/`. A leftover base gives
-`/wedding-steeja-arjun/wedding-steeja-arjun/…`, which 404s while looking like a
-routing bug.
+There is **no `base`**, and that is load-bearing rather than incidental. The
+original project site served this repository from `/wedding-steeja-arjun/` and
+every hand-written path carried that prefix. A leftover base of that shape now
+emits `/wedding-steeja-arjun/_astro/…` against a host that serves `/_astro/…`:
+every asset 404s while the HTML still renders, so it fails looking like a
+styling bug rather than a routing one.
 
 Nothing hand-written starts with a bare `/` even so: internal paths still go
-through `withBase()` in `src/lib/paths.ts`, which now resolves to `/`. It is kept
-so that moving back under a path is one line rather than an audit.
+through `withBase()` in `src/lib/paths.ts`, which resolves to `/`. It is kept so
+that moving back under a path is one line rather than an audit.
 
-### Cloudflare Pages settings
+### Repository settings that the workflow cannot set itself
 
-Set in the dashboard, because Pages takes these from the project rather than
-from `wrangler.toml`:
+Both are one-time, and both fail in a way that points at the wrong thing.
 
-| Setting | Value |
-| --- | --- |
-| Build command | `npm run build` |
-| Build output directory | `dist` |
-| Root directory | `/` |
-| Production branch | `main` |
+**1. Pages source.** Settings → Pages → Build and deployment → Source →
+**GitHub Actions**. Left on "Deploy from a branch", the `deploy` job fails at
+`actions/deploy-pages` with an HTTP 404 on the Pages API, which says nothing
+about the setting that caused it.
 
-And, under **Settings → Environment variables**, for **both Production and
-Preview**:
+**2. The three build variables.** Settings → Secrets and variables → **Actions**
+→ **Variables** tab → *New repository variable*:
 
 | Variable | Value |
 | --- | --- |
 | `PUBLIC_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
 | `PUBLIC_SUPABASE_ANON_KEY` | the anon / publishable key |
 | `PUBLIC_TURNSTILE_SITE_KEY` | the Turnstile site key |
-| `NODE_VERSION` | `22` |
 
-These are **build-time** variables and the dashboard is the only place they can
-live — a `[vars]` block in `wrangler.toml` declares runtime variables for Pages
-Functions and never reaches the build. See the long note in `wrangler.toml`.
+Variables, not secrets, and deliberately: all three are compiled into the client
+bundle and readable in devtools on the deployed site. Calling them secrets would
+imply a protection that does not exist.
 
-Nothing in this repository can prove they were set, so `requirePublicEnv()` in
-`astro.config.mjs` fails the build when one is missing. A deploy that stops with
-**"Refusing to build"** is a missing dashboard variable, not a code fault.
+Repository variables **do not travel with a git push**. A newly created
+repository has none of them, so the first run after a move starts with all three
+unset. `requirePublicEnv()` in `astro.config.mjs` fails that build on purpose —
+without it the build succeeds and ships a reply form pointing at
+`undefined/functions/v1/rsvp`, which looks perfect and cannot send. A run that
+stops with **"Refusing to build"** is a missing repository variable, not a code
+fault.
 
-### The old GitHub Pages deployment
+### `public/.nojekyll` is load-bearing again
 
-Still live, still serving the last artifact it received, and deliberately not
-deleted until the Cloudflare site has been checked end to end.
-`.github/workflows/deploy.yml` has had its `push` trigger removed and keeps only
-`workflow_dispatch`, so it cannot publish by accident.
+An empty file, and it must stay. GitHub Pages runs Jekyll over the artifact
+unless it is present, and Jekyll excludes every directory whose name starts with
+an underscore — which is all of `_astro/`, meaning every stylesheet, script and
+photograph. It was inert on Cloudflare, so nothing would have noticed it going
+missing during that period.
 
-**Running that workflow today would break the GitHub Pages site**, because a
-build from this config has no `base` and GitHub Pages still serves the project
-under a path. The header comment in the workflow lists what to revert first.
+The failure looks like "the CSS is broken", not "the routing is broken" — the
+same misdiagnosis shape as a leftover `base`. After a deploy, open one
+`/_astro/…` URL directly and confirm it returns 200.
+
+### Verifying a build before it ships
+
+```bash
+rm -rf dist && npm run build && node scripts/check-links.mjs
+```
+
+`scripts/check-links.mjs` walks the built HTML and asserts that every internal
+`href`, `src`, `srcset` and absolute `og:`/canonical URL resolves to a file that
+exists in `dist/`, with no doubled path segment and no mention of a host the
+site used to live on. `rm -rf dist` is not optional — Astro leaves stale output
+in place, and checking a pre-migration artifact is how a move gets declared
+finished twice.
+
+### Cloudflare Pages — parked
+
+`wrangler.toml` stays in the tree and is **inert**. A Pages project builds only
+when Cloudflare's git integration is connected to a repository, and it is not
+connected to `steejaarjun/steejaarjun.github.io`; nothing in that file reacts to
+a push here. It is kept, with its dashboard settings recorded in its own
+comments, so that going back is a matter of reconnecting the integration rather
+than reconstructing the configuration.
+
+`https://steeja-arjun.pages.dev` and the original
+`https://chirakkalcode.github.io` are both still serving their last artifacts.
+Neither is the site guests should be sent to.
 
 ### After a domain change
 
-Five things carry the hostname outside the page HTML. All five broke, or would
-have, on the move from `github.io`:
+Five things carry the hostname outside the page HTML, and none of them is fixed
+by changing `site`. Work down the list every time the host changes — the first
+two are the ones that are still wrong right now if the move has just happened,
+because neither lives in this repository's build:
 
 1. **Turnstile hostname list** — Cloudflare dashboard → Turnstile → the widget →
    **Hostnames**. The widget refuses to render on a hostname that is not listed,
@@ -480,14 +518,16 @@ npx supabase@latest functions deploy rsvp
 the platform — do not set them yourself. The deployed URL is
 `https://<project-ref>.supabase.co/functions/v1/rsvp`.
 
-CORS is an explicit allowlist, not a wildcard: `https://steeja-arjun.pages.dev`,
-`https://chirakkalcode.github.io` and `http://localhost:4321`. A new origin means
-editing `ALLOWED_ORIGINS` in `supabase/functions/rsvp/index.ts` **and
-redeploying** — the function is not part of the site build, so a push does not
-update it.
+CORS is an explicit allowlist, not a wildcard: `https://steejaarjun.github.io`
+(the live site), plus `https://steeja-arjun.pages.dev` and
+`https://chirakkalcode.github.io` — both parked but still serving — and
+`http://localhost:4321`. A new origin means editing `ALLOWED_ORIGINS` in
+`supabase/functions/rsvp/index.ts` **and redeploying** — the function is not
+part of the site build, so a push does not update it.
 
-The github.io entry is there only while both hosts run in parallel. Take it out
-once the couple are switched over and the old deployment is retired.
+Drop each parked origin when its deployment is actually torn down, not before: a
+browser sends the page's own origin, so removing one breaks the form on that
+host from the next redeploy onwards.
 
 Cloudflare preview deployments (`https://<hash>.steeja-arjun.pages.dev`) are
 deliberately **not** on the list: a branch preview should not be able to write a

@@ -10,12 +10,17 @@
 #   1. `noindex, nofollow` on the page itself
 #   2. excluded from sitemap.xml (see astro.config.mjs)
 #   3. this line
-# The path carries no `/wedding-steeja-arjun` prefix any more: that was the
-# GitHub Pages project sub-path, and on Cloudflare Pages the site is at the root
-# of its own hostname. A stale prefix here would disallow a path that does not
-# exist while leaving the real /admin crawlable.
+# The path carries no `/wedding-steeja-arjun` prefix. That was the sub-path of a
+# GitHub Pages PROJECT site; this is a USER site (the repository is named
+# steejaarjun.github.io), which is served at the root of the account's hostname.
+# A stale prefix here would disallow a path that does not exist while leaving
+# the real /admin crawlable.
+#
+# This file is served verbatim from public/ — Astro does not rewrite it, and the
+# absolute Sitemap: URL below is not derived from `site` in astro.config.mjs.
+# Change the host in one and you must change it in the other by hand.
 User-agent: *
 Allow: /
 Disallow: /admin
 
-Sitemap: https://steeja-arjun.pages.dev/sitemap-index.xml
+Sitemap: https://steejaarjun.github.io/sitemap-index.xml

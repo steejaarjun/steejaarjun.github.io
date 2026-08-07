@@ -1,10 +1,11 @@
 /**
  * The single point where a hand-written path meets the deploy root.
  *
- * On Cloudflare Pages the site is served from the root of its own hostname, so
- * `BASE_URL` is `/` and `withBase('rsvp')` is simply `/rsvp`. That was not true
- * on GitHub Pages, where the project lived under `/wedding-steeja-arjun/` and a
- * bare `/rsvp` was a 404 — which is why this exists at all.
+ * The site is a GitHub Pages USER site (repository `steejaarjun.github.io`),
+ * served from the root of the account's hostname, so `BASE_URL` is `/` and
+ * `withBase('rsvp')` is simply `/rsvp`. That was not true of the earlier GitHub
+ * Pages PROJECT site, where the repository lived under `/wedding-steeja-arjun/`
+ * and a bare `/rsvp` was a 404 — which is why this exists at all.
  *
  * It stays now that the prefix is empty, and deliberately. Astro rewrites the
  * paths it generates itself (bundled CSS, `astro:assets` output); everything
