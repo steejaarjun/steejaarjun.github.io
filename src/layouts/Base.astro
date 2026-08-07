@@ -28,7 +28,14 @@ type Props = {
   ogImageAlt?: string;
   ogTitle?: string;
   ogDescription?: string;
-  /** Structured data, serialised into one <script type="application/ld+json">. */
+  /* Structured data, serialised into one `script` block of type
+     application/ld+json.
+
+     The tag name is deliberately not written in angle brackets. A .astro file
+     is scanned for script and style tags before any of it is read as
+     TypeScript, and the fence around the frontmatter is not a hiding place —
+     a bracketed tag name in a comment up here opens a block the compiler then
+     tries to parse the rest of the sentence into. Keep tag names bare. */
   schema?: unknown;
   noindex?: boolean;
 };
