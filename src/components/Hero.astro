@@ -13,7 +13,7 @@ const alt =
   'Steeja and Arjun sitting together on a ledge in front of a weathered ochre wall painted with a large white bird.';
 ---
 
-{/* A photograph with a caption on it, and nothing else.
+{/* A photograph, and one bird crossing it.
     ---------------------------------------------------------------------------
     The invitation used to be printed over the picture: a double-hairline frame,
     an eyebrow, the names, a rule, the date, the place, a pill and a Scroll
@@ -26,7 +26,14 @@ const alt =
     photograph. The scrim is a pool in that one corner now rather than a wash
     over everything.
 
-    Still zero client JavaScript, and the <h1> is no longer here — it is on the
+    The one addition since is a bird. The wall the couple are sitting against is
+    painted with a large white one — it is the first thing the alt text reaches
+    for — and a moment after the page settles a two-stroke version of it drifts
+    across the top of the frame and leaves. Once, and then never again. The long
+    comment on `.hero__bird` below is the interesting part of this file.
+
+    Still zero client JavaScript — the bird is CSS along an offset-path, not a
+    sprite sheet and not a canvas — and the <h1> is no longer here: it is on the
     card. This is a <p>. */}
 <section class="hero">
   {/* Art-directed by hand: `<Picture>` emits no `media`, so it cannot switch
@@ -78,6 +85,24 @@ const alt =
   </picture>
 
   <div class="hero__scrim" aria-hidden="true"></div>
+
+  {/* Two arcs meeting at a low point, and deliberately nothing else — no body,
+      no eye, no tail. A bird at this size is a gesture, and every detail added
+      to it makes it read as clip art instead. The wrapper is a zero-sized
+      anchor pinned to the top-right corner; the flight, and the reason the path
+      is written out three times, are in the style block below. */}
+  <div class="hero__bird" aria-hidden="true">
+    <svg
+      class="hero__bird-svg"
+      viewBox="0 0 40 14"
+      fill="none"
+      focusable="false"
+      aria-hidden="true"
+    >
+      <path class="hero__bird-wing hero__bird-wing--lead" d="M2 9C6 2.6 14 2.4 20 10.5"></path>
+      <path class="hero__bird-wing" d="M20 10.5C26 2.4 34 2.6 38 9"></path>
+    </svg>
+  </div>
 </section>
 
 <style>
@@ -131,4 +156,203 @@ const alt =
     );
   }
 
+  /* One bird, once.
+     -----------------------------------------------------------------------
+     A zero-sized box pinned to the top-right corner of the hero, with the
+     drawing hanging out of it. Nothing about that is decorative fussiness: a
+     `path()` in `offset-path` is measured from the element's own origin, so
+     putting the origin in the top-right corner is what makes a negative x mean
+     "left, across the picture" and a positive x mean "the other side of the
+     right edge, where nobody can see it yet". Given
+     `width: 0; height: 0` there is also no box to reason about — the
+     coordinates below are simply where the bird is.
+
+     It is inside a box that already clips and already stacks, so it cannot
+     escape the photograph or reach anything below it. Absolute, zero-sized and
+     pointer-transparent: it reserves no space, takes no click, and contributes
+     nothing to CLS. The only two properties that ever change are
+     `offset-distance` on the wrapper and a `scaleY` on one path, neither of
+     which the layout engine has an opinion about.
+
+     Faint on purpose — shell at 45%, 28px across, 40px on a desktop. It should
+     be caught out of the corner of the eye by somebody reading the card below,
+     not watched. */
+  .hero__bird {
+    /* The default state, and the honest one: not rendered at all. The reveal
+       lives in the `no-preference` block below, so under `reduce` — or in a
+       browser that does not understand the query — there is no start state,
+       no animation and no paint to undo. The markup is inert either way; it
+       costs the accessibility tree nothing, since it is `aria-hidden` and has
+       no text, and it costs the renderer a `display: none` subtree. */
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    /* Above the photograph and above the corner scrim — it is meant to be in
+       the sky, not under the wash. Still inside the hero's `isolation`, so it
+       can never rise past the card that overlaps this section. */
+    z-index: 2;
+    pointer-events: none;
+    color: var(--color-shell);
+  }
+
+  .hero__bird-svg {
+    display: block;
+    width: 28px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .hero__bird-wing {
+    fill: none;
+    stroke: currentColor;
+    stroke-opacity: 0.45;
+    /* Held at 1.25px however the mark is scaled, the same rule the fronds and
+       the rings follow — a hairline that thins with the box turns grey. */
+    stroke-width: 1.25;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  @media (min-width: 1024px) {
+    .hero__bird-svg {
+      width: 40px;
+    }
+  }
+
+  @keyframes hero-bird-cross {
+    from {
+      offset-distance: 0%;
+    }
+    to {
+      offset-distance: 100%;
+    }
+  }
+
+  /* Not a flap. One wing flexing along its span, by about a sixth — the amount
+     of shape change a gliding bird makes when it trims, not the semaphore of a
+     frame-by-frame wingbeat.
+
+     Both numbers here were halved from a first pass that beat twice a second
+     and compressed by 28%. That is a truthful wingbeat and the wrong thing
+     entirely: repetition at that rate is precisely what peripheral vision is
+     built to lock on to, and a mark meant to be caught at the edge of the eye
+     was instead the fastest thing on a page whose brief is stillness. Slower
+     and shallower it reads as a bird holding a line, which is what a bird
+     crossing a photograph of somebody else's wedding should be doing. */
+  @keyframes hero-bird-beat {
+    from,
+    to {
+      transform: scaleY(1);
+    }
+    50% {
+      transform: scaleY(0.84);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__bird {
+      display: block;
+      /* Level, not tangential. `offset-rotate` defaults to `auto`, which turns
+         the element to face along the path — on a shape this symmetrical that
+         does not read as banking, it reads as a paper aeroplane pitching. */
+      offset-rotate: 0deg;
+      /* 6s, once, and `both` so the backwards fill holds it off-frame through
+         the 1.2s delay and the forwards fill leaves it off-frame afterwards.
+         There is no second pass and no return. */
+      animation: hero-bird-cross 6s ease-in-out 1.2s 1 both;
+    }
+
+    /* Only the leading wing moves, and that asymmetry is intentional: two wings
+       beating in lockstep at 28px reads as a mechanism, one flexing against a
+       held one reads as a bird correcting itself. `fill-box` resolves the
+       origin against the path's own bounding box rather than the SVG's, so
+       `100% 100%` is the low inner point where the two strokes meet — the
+       spine. Scaled about anywhere else the wing would swing instead of flex.
+
+       Eight beats of 0.75s is 6s, which is the crossing exactly. It is counted
+       rather than `infinite` precisely so that it cannot outlive the flight:
+       when the bird is gone, nothing here is still running. The page's only
+       other repeating animation is the lantern glow in global.css, and that
+       one is a 40s drift of a blurred wash that never arrives or leaves. */
+    .hero__bird-wing--lead {
+      transform-box: fill-box;
+      transform-origin: 100% 100%;
+      animation: hero-bird-beat 0.75s ease-in-out 1.2s 8 both;
+    }
+
+    /* Why this path is written six times.
+       ---------------------------------------------------------------------
+       `path()` takes absolute user units and cannot take a percentage, so
+       alone among every measurement on this site the crossing cannot be
+       expressed relative to the viewport. That leaves a choice with a bad
+       answer at each end: a path that stops too soon parks the bird in mid-air
+       and leaves it hanging there for good — `both` holds the last keyframe —
+       and a path made long enough that it can never do that is one the bird
+       has left the frame a third of the way through.
+
+       The second failure is the quiet one, and it was measured rather than
+       guessed. An earlier draft used three tiers ending at -700, -1160 and
+       -2600. On a 1280px laptop — the commonest desktop width there is — the
+       bird was off the left edge at 52% of the path, so a crossing specified
+       as six seconds was over in three, and the remaining three were spent
+       flying through nothing. The brief asked for a bird that is noticed
+       peripherally; what it got was one going twice the intended speed.
+
+       So the tiers are narrow instead, each ending just past the left edge of
+       the WIDEST viewport that can ask for it. The arithmetic is
+       `(W + start) / (end + start)`, the fraction of the path a viewport of
+       width W actually sees, and it now lands between 0.63 and 0.97 across the
+       whole range instead of 0.48 — which is to say between about four and six
+       seconds of visible flight, against six before it leaves. Every path is
+       the same curve, scaled: the seven x values sit at the same proportions
+       of the span in all six, so the shape of the glide does not change with
+       the screen, only its length.
+
+       The remaining limit is honest and unchanged in kind: the last tier ends
+       at -2900, so a viewport past about 2840 CSS pixels — a true ultrawide,
+       not a scaled 4K, which reports 1920 — would strand it. Fixing that costs
+       either another tier nobody will load or a script, and a script is not
+       worth it for a bird.
+
+       The y values stay between roughly 30 and 200 in every variant, which
+       keeps the whole crossing in the upper third of the frame and well clear
+       of the couple. Each path is two cubic segments rather than a line: out,
+       a shallow dip, and a rise away — a glide, not a flight path. */
+    .hero__bird {
+      offset-path: path('M 32 44 C -36 30, -92 88, -169 72 C -264 56, -389 96, -540 62');
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (min-width: 480px) {
+    .hero__bird {
+      offset-path: path('M 36 48 C -59 32, -137 96, -244 78 C -376 60, -550 104, -760 68');
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (min-width: 700px) {
+    .hero__bird {
+      offset-path: path('M 40 52 C -86 34, -190 104, -333 84 C -509 64, -740 112, -1020 72');
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (min-width: 960px) {
+    .hero__bird {
+      offset-path: path('M 48 78 C -117 50, -253 156, -441 126 C -671 90, -974 166, -1340 108');
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (min-width: 1280px) {
+    .hero__bird {
+      offset-path: path('M 56 86 C -172 54, -360 172, -618 138 C -936 98, -1354 182, -1860 118');
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (min-width: 1800px) {
+    .hero__bird {
+      offset-path: path('M 56 92 C -296 58, -585 184, -984 148 C -1475 104, -2120 196, -2900 128');
+    }
+  }
 </style>
