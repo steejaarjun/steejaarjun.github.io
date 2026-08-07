@@ -16,8 +16,12 @@ import { withBase } from '../lib/paths';
     and there is nothing left to reflow — CLS stays 0. */}
 <section class="invite" aria-labelledby="couple">
   <div class="invite__card">
-    <p class="invite__eyebrow rise">Together with their families</p>
-
+    {/* The card opens on the names. It used to open on an eyebrow — "Together
+        with their families" — which has been removed, and the <h1> is now the
+        first thing inside the border rather than the second. The space above it
+        is the card's own padding-top and nothing else; see the note on it
+        below, because a large serif with `line-height: 1` needs more of it than
+        the other three sides. */}
     <h1 class="invite__names rise" id="couple">
       Steeja <em class="invite__amp">&amp;</em> Arjun
     </h1>
@@ -71,7 +75,28 @@ import { withBase } from '../lib/paths';
     max-width: 34rem;
     margin-inline: auto;
     margin-top: calc(-1 * var(--invite-overlap));
-    padding: clamp(2rem, 5vw, 3.5rem);
+    /* Top, then the other three.
+       -----------------------------------------------------------------------
+       The card used to open on an eyebrow, and the space above the names was
+       assembled out of three pieces: this padding, the eyebrow's own line box,
+       and the margin on the <h1> under it. With the eyebrow gone that sum has
+       to be made deliberately or it is simply whatever is left over, which is
+       the difference between a card that was designed and one that had a line
+       deleted from it.
+
+       So the <h1> now carries no top margin at all — it is the first thing in
+       the box and the space above it is the box's business — and this figure
+       is the old three-part total, 48px on a phone and 80px up, arrived at in
+       one place instead of three.
+
+       Larger than the other three sides on purpose, and it does not read as
+       lopsided for two reasons. The names are set at `line-height: 1`, so
+       there is almost no half-leading above the capitals and the measured gap
+       is very nearly the whole of what the eye sees — a top padding equal to
+       the sides would look tighter than the sides. And everything below the
+       names is small type, so an evenly padded box would sit the one heavy
+       element hard against the top edge. */
+    padding: clamp(3rem, 7.5vw, 5rem) clamp(2rem, 5vw, 3.5rem) clamp(2rem, 5vw, 3.5rem);
     border-radius: 4px;
     background-color: var(--color-shell);
     /* Lifts it off the photograph. No border — the hairline below is the only
@@ -91,20 +116,16 @@ import { withBase } from '../lib/paths';
     pointer-events: none;
   }
 
-  .invite__eyebrow {
-    margin: 0;
-    font-size: 0.7rem;
-    line-height: 1.6;
-    letter-spacing: 0.34em;
-    /* Tracking is added after the last letter too, which pulls centred text
-       off-axis by half a space; the indent puts it back. */
-    text-indent: 0.34em;
-    text-transform: uppercase;
-    color: var(--color-muted);
-  }
+  /* `.invite__eyebrow` was here. It dressed "Together with their families",
+     which has been removed, and it styled nothing else on this card or any
+     other — the eyebrows elsewhere on the site carry their own section's class.
+     Deleted rather than left behind: a rule matching nothing is a rule someone
+     later has to check. */
 
   .invite__names {
-    margin: clamp(1rem, 2.5vw, 1.5rem) 0 0;
+    /* No top margin. The card's padding owns the space above the names now
+       that they are the first thing in it — see the note on `.invite__card`. */
+    margin: 0;
     font-family: var(--font-display);
     font-weight: 400;
     font-size: clamp(2.5rem, 7vw, 4rem);
@@ -180,3 +201,4 @@ import { withBase } from '../lib/paths';
     }
   }
 </style>
+
