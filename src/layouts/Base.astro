@@ -47,7 +47,21 @@ const {
 } = Astro.props;
 
 const site = Astro.site ?? new URL('https://steejaarjun.github.io');
-const canonical = absoluteUrl(path, site);
+
+/* A trailing slash on every path but the home page, and it is decided here
+   because otherwise two things this project emits disagree about the same page.
+   @astrojs/sitemap writes `https://…/rsvp/`; `absoluteUrl('rsvp')` writes
+   `https://…/rsvp` — and a canonical that names a different URL from the
+   sitemap is a signal pointing two ways at once.
+
+   The slashed form is the one to agree on. The build emits `dist/rsvp/index.html`,
+   so `/rsvp/` is the directory URL a static host serves directly, while the bare
+   `/rsvp` is the form that depends on the host redirecting. It was equivalent on
+   Cloudflare, which canonicalised the other way — which is why this was correct
+   before the move and is not now.
+
+   Home is '' and already resolves to '/'. */
+const canonical = absoluteUrl(path === '' ? '' : `${path.replace(/\/+$/, '')}/`, site);
 
 /* Absolute, always. A relative og:image is the single most common reason a
    preview renders as a bare link — the scraper resolves it against its own

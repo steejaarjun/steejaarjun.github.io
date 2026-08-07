@@ -1,5 +1,5 @@
 /**
- * The admin area. Client-rendered, because Cloudflare Pages cannot check a session
+ * The admin area. Client-rendered, because GitHub Pages cannot check a session
  * server-side — there is no server of ours to check one.
  *
  * ---------------------------------------------------------------------------

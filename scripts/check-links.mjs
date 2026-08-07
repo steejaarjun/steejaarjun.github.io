@@ -36,11 +36,24 @@ if (!existsSync(ROOT)) {
 }
 
 const html = [];
+
+/* The stale-host scan runs over MORE than the HTML, and that is the whole point
+   of separating these two lists. `public/robots.txt` says so itself: its
+   absolute `Sitemap:` line is the one URL in the project that is NOT derived
+   from `site` in astro.config.mjs, so it is the one file where the host can
+   silently disagree with the config. A checker that only opened .html would
+   have reported a clean build while robots.txt still advertised a sitemap on
+   the previous host — which is the exact class of half-finished move this
+   script exists to catch. */
+const text = [];
+const TEXT_EXT = ['.html', '.txt', '.xml', '.webmanifest', '.ics', '.json'];
+
 (function walk(dir) {
   for (const entry of readdirSync(dir)) {
     const p = join(dir, entry);
     if (statSync(p).isDirectory()) walk(p);
-    else if (entry.endsWith('.html')) html.push(p);
+    else if (entry.endsWith('.html')) { html.push(p); text.push(p); }
+    else if (TEXT_EXT.some((ext) => entry.endsWith(ext))) text.push(p);
   }
 })(ROOT);
 
@@ -79,13 +92,30 @@ function check(page, original, path) {
   }
 }
 
+for (const file of text) {
+  const name = file.slice(ROOT.length).replace(/\\/g, '/');
+  const source = readFileSync(file, 'utf8');
+  for (const host of STALE_HOSTS) {
+    if (source.includes(host)) problems.push(`STALE    ${name}  mentions ${host}`);
+  }
+}
+
+/* robots.txt is checked positively as well as negatively. Absence of the old
+   host does not prove presence of the new one — a `Sitemap:` line deleted
+   outright would pass every test above. */
+const robots = join(ROOT, 'robots.txt');
+if (existsSync(robots)) {
+  const source = readFileSync(robots, 'utf8');
+  if (!source.includes(`Sitemap: ${SITE}/`)) {
+    problems.push(`HOST     /robots.txt  Sitemap: line does not point at ${SITE}`);
+  }
+} else {
+  problems.push('MISSING  /robots.txt');
+}
+
 for (const file of html) {
   const page = file.slice(ROOT.length).replace(/\\/g, '/');
   const source = readFileSync(file, 'utf8');
-
-  for (const host of STALE_HOSTS) {
-    if (source.includes(host)) problems.push(`STALE    ${page}  mentions ${host}`);
-  }
 
   const refs = [];
   for (const match of source.matchAll(ATTR)) {
