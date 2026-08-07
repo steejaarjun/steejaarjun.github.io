@@ -45,19 +45,22 @@ export const FAQ: readonly FaqItem[] = [
   // Venue section. Flagged when it was removed; restoring it means restoring
   // this entry or saying it somewhere else.
 
-  // TODO — REVIEW BEFORE LAUNCH. The question below was not supplied by the
-  // couple; it was written to cover a case the rest of the site already implies
-  // (children are invited). The substance follows from that decision, but the
-  // wording is ours and should be read over before the link is shared.
+  // "Are children welcome?" was removed on request, and with it the last
+  // sentence anywhere on the site that answered the question. Its companion,
+  // "Can we bring someone with us?", had already gone the same way, and the
+  // review note that used to stand here covered only those two.
   //
-  // Its companion — "Can we bring someone with us?" — was removed on request.
-  {
-    id: 'children',
-    question: 'Are children welcome?',
-    answer:
-      'Yes — children are very welcome. Please add their names when you reply, so we can plan seating and food for them.',
-  },
-  // END OF QUESTIONS TO REVIEW.
+  // What remains is an implication rather than a statement: the reply form
+  // still offers "Child under 12" beside each companion, so a guest who opens
+  // it can infer that children may be brought, and the summary on the success
+  // screen still prints "(child)" after a name. That was left in place
+  // deliberately — see the note below — but it is an inference, and inferring
+  // is not being told. A guest who reads only this page now has no answer.
+  //
+  // If the couple want children mentioned again, this entry is the place for
+  // it. If they want the opposite — children not invited — the reply form is
+  // the thing to change, and `src/data/dresscode.ts` still carries a
+  // commented-out children's group that would want deleting with it.
 
   {
     id: 'help',

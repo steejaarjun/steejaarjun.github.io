@@ -33,15 +33,29 @@ route the couple will actually use.
 
 ## 3. Supply the copy that is still missing
 
-Four things, all in `src/data/`. The site renders correctly without them; it
+Three things, all in `src/data/`. The site renders correctly without them; it
 just says less than it could.
 
 | Where | What is needed |
 | --- | --- |
 | `src/data/wedding.ts:43` | Church coordinates, as `{ lat, lng }` |
 | `src/data/wedding.ts:55` | Reception coordinates, as `{ lat, lng }` |
-| `src/data/faq.ts:49–66` | **Read and approve two answers.** "Are children welcome?" and "Can we bring someone with us?" were written to cover cases the rest of the site implies. The substance follows from decisions already made; the wording is not the couple's and should be theirs before the link is shared. |
-| `src/data/dresscode.ts:37–42` | A children's dress-code group, if the couple want one. Commented out rather than guessed. Uncomment and fill in `garment` and `palette`; the component handles a fourth entry with no other change. |
+| `src/data/dresscode.ts:37–42` | A children's dress-code group, if the couple want one. Commented out rather than guessed. Uncomment and fill in `garment` and `palette`; the component handles a fourth entry with no other change. **But see the decision below first** — a dress code for children would be the site's only statement that children are coming. |
+
+The row that used to sit here asked the couple to approve two FAQ answers we
+had written rather than been given — "Are children welcome?" and "Can we bring
+someone with us?". Both have since been removed on request, so there is nothing
+left to approve and the row has gone with them.
+
+**A decision that is now open.** Between them those two answers were the only
+place the site said anything about who a guest may bring. Nothing states it
+now. The reply form still offers "Child under 12" beside each companion, so a
+guest who opens it can work out that children are allowed, but no page says so
+— and a guest who reads the invitation without opening the form has no answer
+at all. That is a defensible way to leave it, and it may well be what was
+wanted; it just should not be discovered by a parent on the day. If children
+are welcome, the FAQ is where to say it. If they are not, the reply form's
+Adult/Child radios and the commented-out group above both want removing.
 
 Coordinates are optional in the sense that nothing breaks: while they are
 `null` the map falls back to a text search on venue and area, which Google
