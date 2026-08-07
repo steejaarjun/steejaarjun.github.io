@@ -108,6 +108,26 @@ const primary = CONTACTS[0];
       </ul>
     </div>
 
+    {/* The line that says a half-written reply was kept.
+        ----------------------------------------------------------------------
+        In the document from the first byte, holding its line whether or not it
+        has anything to say, and only `visibility` ever changes. That is the
+        whole of it: the script that decides is a deferred module, the browser
+        is free to have painted before it runs, and on a reload restored to
+        this very section that paint is the page the guest is looking at.
+        Revealing the line then would push the form down by a line — small,
+        late, and counted in full. This section has made that exact mistake
+        once already; see the `.rsvp-js` note above the `scripting: none`
+        rules for what it cost.
+
+        Muted and unadorned on purpose. Nothing was lost and there is nothing
+        to do about it, so it gets none of the vocabulary of an alert — no
+        colour, no rule, no icon. `role="status"` says it once, politely,
+        without taking the cursor off whatever the guest reached for. */}
+    <p class="rsvp__kept" id="rsvp-kept" role="status">
+      We&rsquo;ve kept what you filled in earlier.
+    </p>
+
     {/* `novalidate`: the browser's own bubbles cannot be styled, vanish on the
         next click and are announced inconsistently. Validation below is ours,
         on blur and on submit, and it writes into the page where it stays. */}
@@ -520,6 +540,7 @@ const primary = CONTACTS[0];
     const companionsField = $<HTMLFieldSetElement>('rsvp-companions-field');
     const template = $<HTMLTemplateElement>('rsvp-person-template');
     const counter = $<HTMLParagraphElement>('rsvp-message-count');
+    const kept = $<HTMLParagraphElement>('rsvp-kept');
     const submit = $<HTMLButtonElement>('rsvp-submit');
     const formError = $<HTMLParagraphElement>('rsvp-form-error');
     const done = $<HTMLDivElement>('rsvp-done');
@@ -661,6 +682,9 @@ const primary = CONTACTS[0];
       const row = template.content.firstElementChild!.cloneNode(true) as HTMLElement;
       people.appendChild(row);
       syncPeople();
+      /* Adding and removing a row are the two changes to this form that are not
+         typing, so they are the two the `input` listener below cannot see. */
+      queueSave();
       row.querySelector<HTMLInputElement>('[data-person-name]')!.focus();
     }
 
@@ -673,6 +697,7 @@ const primary = CONTACTS[0];
       const neighbour = row.nextElementSibling ?? row.previousElementSibling;
       row.remove();
       syncPeople();
+      queueSave();
       /* Focus was on the button that has just been removed from the document,
          which drops it to <body> and loses a keyboard user their place on a
          long form. Somewhere deliberate instead: the next row if there is one,
@@ -730,6 +755,182 @@ const primary = CONTACTS[0];
       counter.textContent =
         used >= COUNTER_FROM ? `${MESSAGE_MAX - used} characters left` : '';
     });
+
+    /* ---------------------------------------------------------------------
+       The draft
+
+       This form is answered on a phone, and a phone is a device that
+       interrupts people. A call, a message, a tab quietly evicted while an app
+       is in front of it — and a reply three-quarters written is gone, along
+       with, in practice, the reply itself. So what has been typed is kept and
+       put back on the next load.
+
+       sessionStorage and never localStorage, because handsets on this list are
+       shared: one phone answers for a couple, often for a household. A draft
+       that outlived the tab would put somebody else's half-written reply, with
+       their name and their number in it, in front of the next person to open
+       the page a week later. The tab is exactly the right lifetime — it is the
+       same sitting, by the same person.
+
+       Two things are deliberately not kept. The Turnstile token, because it is
+       single-use: one restored from an hour ago would fail the check and send
+       the guest hunting for a mistake in a field. And the honeypot, which is
+       only ever right when it is empty — storing it would risk handing a
+       browser's autofill, or a bot's own value, back to the one field that
+       marks a reply as spam.
+       --------------------------------------------------------------------- */
+    const DRAFT_KEY = 'sa:rsvp:v1';
+
+    let saveTimer = 0;
+
+    const chosen = (name: string) =>
+      form.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`)?.value ?? '';
+
+    /* Every call into storage is wrapped, and this is not defensive habit:
+       Safari in private mode throws on setItem rather than refusing quietly,
+       and an exception escaping here would take the whole of this script down
+       with it — the send included. A lost draft is a nuisance. A form that
+       cannot be sent is the site. */
+    function saveDraft() {
+      if (sent) return;
+      try {
+        sessionStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({
+            first: first.value,
+            last: last.value,
+            dial: dial.value,
+            phone: phone.value,
+            message: message.value,
+            mass: chosen('attending_mass'),
+            reception: chosen('attending_reception'),
+            /* The same rows the payload would send, read by the same function,
+               so the list cannot be understood one way here and another way at
+               the moment it matters. Both answers No has already emptied it. */
+            people: companions(),
+          }),
+        );
+      } catch {
+        /* No storage available. Nothing else about the form changes. */
+      }
+    }
+
+    /* 400ms: long enough that a name is one write instead of eight, short
+       enough that a guest interrupted mid-word loses at most that word. */
+    const queueSave = () => {
+      clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(saveDraft, 400);
+    };
+
+    function clearDraft() {
+      /* The pending write goes first. A guest who types and presses Send
+         inside the same 400ms would otherwise have the timer put the draft
+         back after the reply was accepted, and the next reload would offer
+         them an answer they have already sent. */
+      clearTimeout(saveTimer);
+      try {
+        sessionStorage.removeItem(DRAFT_KEY);
+      } catch {
+        /* Nothing was ever stored. */
+      }
+    }
+
+    /* Whatever comes back is a string somebody could have typed into a storage
+       inspector, so it is read as one. Clamped to the same limits the controls
+       themselves carry, and assigned with .value and .checked only — nothing
+       here goes near innerHTML, so the worst a hand-edited entry can do is put
+       a long name into a box that already stops at 80 characters. */
+    const str = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max) : '');
+
+    /** Puts the draft back, and answers whether a guest would notice. */
+    function restoreDraft(): boolean {
+      let draft: any;
+      try {
+        const raw = sessionStorage.getItem(DRAFT_KEY);
+        draft = raw ? JSON.parse(raw) : null;
+      } catch {
+        /* Unreadable or not JSON at all, which is the same thing as no draft. */
+        return false;
+      }
+      if (!draft || typeof draft !== 'object') return false;
+
+      first.value = str(draft.first, 80);
+      last.value = str(draft.last, 80);
+      phone.value = str(draft.phone, 20);
+      message.value = str(draft.message, MESSAGE_MAX);
+
+      /* Assigned, then checked that the assignment took. A <select> handed a
+         value none of its options carry ends up on no option at all, and
+         `e164()` reads the country's code off the selected one — so a nonsense
+         code would quietly turn every phone number into a rejected one. The
+         build-time default stands instead. */
+      const fallback = dial.value;
+      dial.value = str(draft.dial, 2);
+      if (!dial.selectedOptions[0]?.dataset.dial) dial.value = fallback;
+
+      /* Only ever 'yes' or 'no' — which is also what makes the selector below
+         safe to build, since by the time it is written the value in it has
+         been proved to be one of two literals. */
+      const setAnswer = (name: string, v: unknown) => {
+        if (v !== 'yes' && v !== 'no') return;
+        const radio = form.querySelector<HTMLInputElement>(
+          `input[name="${name}"][value="${v}"]`,
+        );
+        if (radio) radio.checked = true;
+      };
+      setAnswer('attending_mass', draft.mass);
+      setAnswer('attending_reception', draft.reception);
+
+      /* Cloned straight from the template rather than through addPerson(),
+         which focuses the row it adds — on a page the guest has only just
+         opened that would scroll them down to this section and take the
+         cursor. Capped at MAX_PEOPLE, the same twenty the database allows. */
+      const list = Array.isArray(draft.people) ? draft.people.slice(0, MAX_PEOPLE) : [];
+      for (const person of list) {
+        const row = template.content.firstElementChild!.cloneNode(true) as HTMLElement;
+        row.querySelector<HTMLInputElement>('[data-person-name]')!.value = str(
+          person?.name,
+          80,
+        );
+        /* Anything that is not the word 'child' is an adult, which is also
+           what the template ships checked. */
+        const type = person?.type === 'child' ? 'child' : 'adult';
+        row.querySelectorAll<HTMLInputElement>('[data-person-type]').forEach((r) => {
+          r.checked = r.value === type;
+        });
+        people.appendChild(row);
+      }
+
+      /* Both answers No has to mean here exactly what it means everywhere
+         else: the companions block is gone and its rows with it. Going back
+         through the same function rather than repeating the rule is what keeps
+         a restored form in a state the rest of this script already knows. */
+      syncDeclined();
+
+      /* The counter is written on input, and a restored 900-character message
+         never fires one. */
+      message.dispatchEvent(new Event('input'));
+
+      /* "Something was restored" means something a guest would recognise as
+         theirs. A country code on its own is the one the form ships with, so
+         it is not on this list — being told we kept an answer nobody gave is
+         worse than being told nothing. */
+      return !!(
+        first.value ||
+        last.value ||
+        phone.value ||
+        message.value ||
+        chosen('attending_mass') ||
+        chosen('attending_reception') ||
+        rows().length
+      );
+    }
+
+    /* One listener for the lot. `input` bubbles and every control on this form
+       fires it — text, textarea, the country <select> and the radios — so the
+       only changes it cannot see are the two clicks that add and remove a row,
+       which call queueSave() themselves. */
+    form.addEventListener('input', queueSave);
 
     /* ---------------------------------------------------------------------
        Validation, on blur and on submit. Never on input: correcting somebody
@@ -1022,6 +1223,10 @@ const primary = CONTACTS[0];
 
         if (response.ok && result.ok) {
           sent = true;
+          /* Before the panel goes up, not after. From this line the draft is a
+             stale copy of something already accepted, and a reload landing on
+             a restored form would be an invitation to answer twice. */
+          clearDraft();
           showDone(payload);
           return;
         }
@@ -1084,12 +1289,24 @@ const primary = CONTACTS[0];
       )}`;
 
       form.hidden = true;
+      /* The kept-draft line leaves with the form it belonged to. Out of the
+         flow rather than merely invisible: the reason it held its line was to
+         keep a reveal from moving the form, and there is no form left to move.
+         A note about a half-written reply over a thank-you is only confusing. */
+      kept.hidden = true;
       done.hidden = false;
       /* The panel replaced the thing that had focus, so focus has to be given
          somewhere deliberate or it falls to <body>. */
       done.setAttribute('tabindex', '-1');
       done.focus();
     }
+
+    /* Last, because a restored answer has to be put back through machinery
+       that already exists — the row template, syncDeclined(), the counter. The
+       syncPeople() that has always closed init() then numbers, labels and
+       totals whatever came back, which is why the rows above are appended and
+       nothing here counts them. */
+    if (restoreDraft()) kept.classList.add('rsvp__kept--on');
 
     syncPeople();
   }
@@ -1176,6 +1393,13 @@ const primary = CONTACTS[0];
     .rsvp__nojs {
       display: block;
     }
+
+    /* Nothing keeps a draft without script, so the line reserved for saying so
+       would only be a blank one sitting over the WhatsApp numbers. Out of the
+       flow entirely here — there is no reveal left to protect. */
+    .rsvp__kept {
+      display: none;
+    }
   }
 
   .rsvp__nojs-lead {
@@ -1215,6 +1439,57 @@ const primary = CONTACTS[0];
     font-size: 0.85rem;
     font-variant-numeric: tabular-nums;
     opacity: 0.75;
+  }
+
+  /* -- the kept draft --------------------------------------------------------
+     `.rsvp__hint`'s size and colour, because it is the same kind of sentence: a
+     quiet aside about something that needs nothing doing. Never a banner. The
+     moment it gets a tint or a border it becomes a thing to be dealt with, and
+     what it actually says is that there is nothing to deal with.
+
+     It holds its line whether or not it is showing, and only `visibility` moves.
+     The alternative — ship it `hidden` and reveal it — decides the layout one
+     frame in, which is precisely what `.rsvp-js` did to this section and what
+     cost the page its entire CLS. The script is a deferred module; the browser
+     may well have painted before it runs, and a reload restored to this section
+     means that paint is what the guest is looking at. Reserved, the reveal
+     cannot move a pixel. It is the same trade `.rsvp__count` makes below, and it
+     costs the same thing: one line of quiet space that is usually empty.
+  ------------------------------------------------------------------------- */
+  .rsvp__kept {
+    /* Takes over the gap the form used to open with — specificity, not source
+       order, is what wins that back below — so the reserved line costs the
+       layout one line height rather than a line height plus a margin. */
+    margin-top: clamp(2rem, 4.5vw, 3rem);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+    visibility: hidden;
+  }
+
+  .rsvp__kept--on {
+    visibility: visible;
+  }
+
+  .rsvp__kept + .rsvp__form {
+    margin-top: 0.6rem;
+  }
+
+  @keyframes kept-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* Once, over two-thirds of a second, on the one frame the line is shown.
+       Opacity only — the box it fades into was already there and is not going
+       to move. Written inside `no-preference` rather than switched off under
+       `reduce`, so where the query is unsupported the line is simply visible
+       and no start state exists to strand it at nothing. */
+    .rsvp__kept--on {
+      animation: kept-in 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    }
   }
 
   /* -- fields -------------------------------------------------------------- */
