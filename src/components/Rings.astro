@@ -9,9 +9,17 @@
  * Line only — 1px stroke, no fill, no gradient, no shine. It is a drawn mark in
  * the same ochre as the hairlines elsewhere, not a graphic of jewellery.
  *
- * The convergence is finished before Our Story's heading arrives: the range
- * ends at `cover 40%`, so the rings have closed while the block is still in the
- * upper half of the viewport and the heading below it has not been reached.
+ * The convergence is stretched across roughly the whole scroll distance between
+ * the invitation card and Our Story's heading, and that length is the point. A
+ * closing that happens over a fraction of a viewport is finished before anyone
+ * reading at a normal pace has looked up at it — all a reader gets is rings
+ * that were already together. Given the full run it is slow enough that the
+ * movement is felt without ever being the thing on screen.
+ *
+ * So the range starts a viewport before the rings themselves appear, while the
+ * countdown and the card region are still what is being read, and finishes as
+ * the pair leaves the top of the screen — which is the moment Our Story's
+ * heading has arrived.
  */
 ---
 
@@ -84,9 +92,20 @@
 
   @media (prefers-reduced-motion: no-preference) {
     /* Scroll-linked, where the browser can do it without a script. `view()`
-       ties the animation to this element's own progress through the viewport;
-       `entry 0% cover 40%` closes the rings well before Our Story's heading is
-       on screen. */
+       ties the animation to this element's own progress through the viewport,
+       and the range is deliberately much longer than the element is tall.
+       `cover -100vh` begins the convergence a full viewport before the rings
+       enter — the countdown and the card region are still on screen and the
+       rings are not yet visible, so the first half of the movement happens
+       unwatched, which is exactly what makes the part that is watched feel
+       unhurried. `cover 100%` ends it as the pair leaves the top, by which
+       point Our Story's heading has arrived.
+
+       Offsets outside 0-100% are valid per spec and Chrome honours them. A
+       browser that ignores or rejects the declaration falls back to the full
+       default `cover` range, which is still 2.5x slower than the range this
+       replaces — so the worst case here is a smaller improvement rather than a
+       regression, and there is nothing to guard against. */
     @supports (animation-timeline: view()) {
       .rings__ring--left,
       .rings__ring--right {
@@ -94,7 +113,7 @@
         animation-fill-mode: both;
         animation-timing-function: linear;
         animation-timeline: view();
-        animation-range: entry 0% cover 40%;
+        animation-range: cover -100vh cover 100%;
       }
 
       .rings__ring--left {
@@ -117,11 +136,18 @@
       transform: translateX(40px);
     }
 
+    /* On a clock rather than on the scroll, so the length has to be chosen
+       instead of derived. 2.5s is the closest a timed play gets to the pace of
+       the scroll-linked path above without the rings appearing to be stuck
+       partway. The easing carries nearly all of the distance in the first
+       third and spends the rest arriving, so the two circles settle against
+       each other rather than snapping shut — the old curve was quick enough
+       that the end of the movement read as a click. */
     .rings--fallback.rings--play .rings__ring--left,
     .rings--fallback.rings--play .rings__ring--right {
-      animation-duration: 900ms;
+      animation-duration: 2.5s;
       animation-fill-mode: both;
-      animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+      animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .rings--fallback.rings--play .rings__ring--left {
