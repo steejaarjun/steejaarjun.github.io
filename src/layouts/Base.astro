@@ -44,9 +44,30 @@ const {
   title,
   description,
   path = '',
-  ogImage = 'og-steeja-arjun.jpg',
+  /* Both pages that use this layout take the default — / overrides the title
+     and description but not the card, and /rsvp overrides nothing. So this
+     line and the alt below it are the link preview for the whole site, and
+     changing them changes what every forwarded link looks like.
+
+     The filename is versioned rather than fixed: see the note beside OG_FILE in
+     scripts/make-brand-assets.mjs. Replacing the card means a NEW name here and
+     there, because the caches that matter key on the URL. */
+  ogImage = 'og-steeja-arjun-garden.jpg',
+  /* Written for someone who cannot see it, which rules out both "wedding
+     photo" and a description of the composition. What is in the frame, in the
+     order you would notice it. The blurred panels either side are the same
+     photograph enlarged and are deliberately not mentioned — they are a
+     rendering device, not something in the picture.
+
+     Every claim here is measured off the file rather than remembered, because
+     alt text is the one string on the page nobody proofreads against the
+     image. Three earlier drafts were wrong: "at dusk" (EXIF DateTimeOriginal
+     is 06:44, so it is morning), "mauve" (the gown samples at hue 344° — a
+     rose, not a purple) and "lantern-lit trees" (the canopy samples at 11-15%
+     value; it is dark, and the light is one globe lamp on a post at the
+     left). */
   ogImageAlt =
-    'Steeja and Arjun sitting together in front of a weathered ochre wall, with their names and the date, Sunday 6 September 2026, Kerala, India.',
+    'Steeja and Arjun standing close together on the grass in a garden, she in a long dusty-rose gown and he in a light grey suit over an open-collared white shirt, with a lit globe lamp glowing on its post behind them and dark trees beyond.',
   ogTitle = title,
   ogDescription = description,
   schema,

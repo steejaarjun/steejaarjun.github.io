@@ -260,11 +260,35 @@ derives what the page actually uses:
 | `src/assets/photos/EPW09695-wide.jpg` | hero, full 2:3 frame, 1920x2880 — used at 900px and up |
 | `src/assets/photos/EPW09695-phone.jpg` | hero, 4:5 crop, 1920x2400 — used below 900px |
 | `src/assets/photos/EPW00926-4x5.jpg` | Our Story, 4:5 crop, 1920x2400 |
-| `public/og-steeja-arjun.jpg` | 1200x630 landscape crop for link previews |
 
 These are committed, so CI never touches the originals. Re-run `npm run media`
 after replacing a source photo; the script asserts the expected 5760x8640 input
 because the crop windows are measured against that frame.
+
+### The link preview card
+
+`public/og-steeja-arjun-garden.jpg` is **not** in the table above. It comes from
+`npm run brand` (`scripts/make-brand-assets.mjs`), not `npm run media`, and its
+source is `src/assets/photos/IMG_4764.jpg` — a 4000x6000 frame, so the
+5760x8640 assertion above does not apply to it.
+
+It is composed rather than cropped. The source is a 2:3 portrait and the card is
+1.905:1, so the photograph is *contained* at 420x630 — its full height, nothing
+cut, nothing stretched — and the 390px either side is the same photograph blown
+up to the card, blurred and darkened, so the panels carry the frame's own tones
+instead of reading as bars. There is no type on the card.
+
+Two things about it are easy to get wrong:
+
+- **The filename is versioned, not fixed.** WhatsApp, iMessage and Facebook
+  cache a preview against the og:image URL for weeks. Replacing the card means a
+  NEW filename — overwriting this one leaves every guest who has already seen
+  the link looking at the old card indefinitely. The name appears in three
+  places and nothing checks that they agree: `OG_FILE` in
+  `scripts/make-brand-assets.mjs`, the `ogImage` default in
+  `src/layouts/Base.astro`, and the JSON-LD image in `src/pages/index.astro`.
+- **It must stay under 300 kB.** WhatsApp drops larger previews without saying
+  so. The script asserts at 290 kB; the card currently sits at ~109 kB.
 
 The hero is art-directed by hand in `Hero.astro` rather than with `<Picture>`,
 because `<Picture>` emits no `media` attribute and so cannot switch crops. It is

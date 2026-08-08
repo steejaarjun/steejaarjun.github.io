@@ -4,13 +4,15 @@
  *
  * Run with `npm run brand`. Outputs are committed, so a deploy never depends on
  * this script running — but re-run it after changing the palette, the display
- * face or the hero crop, or the assets quietly stop matching the site.
+ * face or the source photograph, or the assets quietly stop matching the site.
  *
- * All text is set as SVG paths lifted from the font's own outlines rather than
- * rasterised by a text engine. See scripts/lib/text-to-path.mjs for why: three
- * separate font-loading routes were tried and every one of them fell back to
- * the system serif *without erroring*, which would have shipped the wrong
- * typeface to every WhatsApp group the link is pasted into.
+ * What text there is — the monogram on the icons — is set as SVG paths lifted
+ * from the font's own outlines rather than rasterised by a text engine. See
+ * scripts/lib/text-to-path.mjs for why: three separate font-loading routes were
+ * tried and every one of them fell back to the system serif *without erroring*,
+ * which would have shipped the wrong typeface to every home screen the site was
+ * saved to. The link preview card carries no type at all now; it is the
+ * photograph, composed to 1200x630 — see section 1.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -40,97 +42,131 @@ const [regular, italic] = await Promise.all([
 const setRegular = openFont(regular);
 const setItalic = openFont(italic);
 
-/**
- * "Steeja & Arjun" with an italic ampersand at 0.8em — the same construction as
- * the top-bar monogram. It is the mark, not merely the two names, so the card
- * and the icons are built from it rather than from plain text.
- */
-function nameMark(size, centreX, baseline) {
-  const ampSize = size * 0.8;
-  const left = setRegular('Steeja ', size, 0, 0);
-  const amp = setItalic('&', ampSize, 0, 0);
-  const right = setRegular(' Arjun', size, 0, 0);
-
-  const total = left.width + amp.width + right.width;
-  let x = centreX - total / 2;
-
-  const d = [
-    setRegular('Steeja ', size, x, baseline).d,
-    setItalic('&', ampSize, (x += left.width), baseline).d,
-    setRegular(' Arjun', size, (x += amp.width), baseline).d,
-  ].join('');
-
-  return { d, width: total };
-}
-
-/** Centred, letter-spaced small caps line. */
-function centredLine(text, size, centreX, baseline, spacing) {
-  const measured = setRegular(text, size, 0, 0, spacing);
-  return setRegular(text, size, centreX - measured.width / 2, baseline, spacing).d;
-}
-
 /* -------------------------------------------------------------------------
    1. The link preview card, 1200x630
    ------------------------------------------------------------------------- */
 
 const OG = { width: 1200, height: 630 };
 
-/* Composed, not cropped. A 1200x630 slice of a portrait photograph is a
-   letterbox of somebody's midriff; this is the photograph as a ground with the
-   invitation laid over it, which is what a guest should see in a chat thread.
-   The crop window is the one from prepare-media.mjs — chosen around the two of
-   them, see the landmark table there. */
-const heroCrop = { left: 470, top: 2500, width: 4820, height: 2530 };
+/* The source is a PORTRAIT photograph — 4000x6000, a 2:3 frame — and the card
+   it has to fill is 1.905:1. Those two numbers are the whole design of this
+   block, because every link preview surface centre-crops to its own ratio and
+   none of them ask first. Cropping 2:3 to 1.905:1 keeps 32% of the height: on
+   a full-length standing photograph that is a band across two people's chests,
+   with both of their heads outside it.
+                                                                       .
+   So the photograph is CONTAINED, not covered. It lands 420x630 — its full
+   height, nothing cropped, nothing stretched — and the 390px either side is
+   filled with the photograph itself, blown up to the card and blurred past the
+   point of being a picture. That fill is the reason this is not letterboxing:
+   the panels carry the frame's own tones, the dark trees along the top and the
+   grass along the bottom, so the eye reads depth behind the photograph rather
+   than two bars beside it.
+                                                                       .
+   `fit: 'fill'` for the backdrop, and the horizontal stretch is deliberate. It
+   is the whole 4000x6000 frame squashed to 1200x630, which keeps the full
+   top-to-bottom tonal range; the alternative, `cover`, samples only the middle
+   2100 rows and produced a flat mid-tone smear with a warm streak down the
+   left. Under a 42px blur the distortion is not resolvable and the tonal range
+   is what survives. Nothing about the CONTAINED photograph is stretched.
+                                                                       .
+   Read the trade honestly before changing it: at 420 of 1200px the two of them
+   occupy about a third of the card's width, so in a WhatsApp thumbnail they are
+   roughly 90px across. A crop around their faces would be far more legible at
+   that size and is what this block used to do with a different photograph. Not
+   cropping is a decision about this image, not an oversight. */
+const SOURCE = 'src/assets/photos/IMG_4764.jpg';
 
-const photo = await sharp(resolve(root, 'src/assets/photos/EPW09695.jpg'))
-  .extract(heroCrop)
-  .resize(OG.width, OG.height, { fit: 'cover' })
+const card = await sharp(resolve(root, SOURCE))
+  .resize({ height: OG.height, fit: 'inside' })
   .toBuffer();
 
-/* The scrim. Deeper than the page's, and unapologetically so: this is read at
-   thumbnail size in a chat list, often on a phone at arm's length, and the type
-   has to hold at 200px wide. Warm rather than grey — see the note on
-   --shade-rgb; a neutral wash turns the ochre wall behind them muddy. */
-const inset = 34;
-const overlay = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${OG.width}" height="${OG.height}">
-  <defs>
-    <linearGradient id="v" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="rgb(24,16,11)" stop-opacity="0.62"/>
-      <stop offset="42%"  stop-color="rgb(24,16,11)" stop-opacity="0.46"/>
-      <stop offset="100%" stop-color="rgb(20,13,9)"  stop-opacity="0.78"/>
-    </linearGradient>
-    <radialGradient id="c" cx="50%" cy="46%" r="72%">
-      <stop offset="0%"   stop-color="rgb(24,16,11)" stop-opacity="0.34"/>
-      <stop offset="100%" stop-color="rgb(24,16,11)" stop-opacity="0.52"/>
-    </radialGradient>
-  </defs>
-  <rect width="100%" height="100%" fill="url(#v)"/>
-  <rect width="100%" height="100%" fill="url(#c)"/>
-  <rect x="${inset}" y="${inset}" width="${OG.width - inset * 2}" height="${OG.height - inset * 2}"
-        fill="none" stroke="${SHELL}" stroke-opacity="0.42" stroke-width="1.5"/>
-  <path d="${centredLine('TOGETHER WITH THEIR FAMILIES', 21, OG.width / 2, 214, 7)}"
-        fill="${SHELL}" fill-opacity="0.86"/>
-  <path d="${nameMark(126, OG.width / 2, 350).d}" fill="${SHELL}"/>
-  <path d="M${OG.width / 2 - 66} 392 H${OG.width / 2 + 66}" stroke="${SHELL}" stroke-opacity="0.5" stroke-width="1"/>
-  <path d="${centredLine('SUNDAY, 6 SEPTEMBER 2026', 30, OG.width / 2, 452, 6)}" fill="${SHELL}"/>
-  <path d="${centredLine('KERALA, INDIA', 23, OG.width / 2, 496, 5)}" fill="${SHELL}" fill-opacity="0.82"/>
+const cardWidth = (await sharp(card).metadata()).width;
+const cardLeft = Math.round((OG.width - cardWidth) / 2);
+
+/* The one assumption this composition makes about its source, asserted rather
+   than trusted. Fitting to the card's HEIGHT only leaves room either side while
+   the source is taller than 1.905:1; hand it a landscape photograph and
+   `cardWidth` exceeds 1200, `cardLeft` goes negative, and sharp composites it
+   off the left edge — cropping the thing this whole block exists to keep whole,
+   without failing. prepare-media.mjs asserts its source frame for the same
+   reason; this is the sibling guard it was missing. */
+if (cardWidth > OG.width) {
+  throw new Error(
+    `${SOURCE} is landscape or wider than ${OG.width}x${OG.height} — fitted to ` +
+      `${cardWidth}px wide, which does not fit the card. This block contains a ` +
+      'PORTRAIT photograph and centres it; a landscape source wants a crop, ' +
+      'not a contain, so rewrite the composition rather than loosening this.',
+  );
+}
+
+const backdrop = await sharp(resolve(root, SOURCE))
+  .resize(OG.width, OG.height, { fit: 'fill' })
+  .blur(42)
+  /* Down to half brightness and off the saturation, so the panels stay behind
+     the photograph instead of competing with it. Without this the blurred
+     grass is the brightest thing on the card. */
+  .modulate({ brightness: 0.5, saturation: 0.7 })
+  .toBuffer();
+
+/* A hairline down each seam. One pixel of shell at 38% is not decoration — it
+   is what stops the contained edge dissolving into a backdrop made of the same
+   colours, which is exactly when a composed card starts looking like a
+   rendering accident. */
+const seams = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${OG.width}" height="${OG.height}">
+  <line x1="${cardLeft}" y1="0" x2="${cardLeft}" y2="${OG.height}"
+        stroke="${SHELL}" stroke-opacity="0.38" stroke-width="1"/>
+  <line x1="${cardLeft + cardWidth}" y1="0" x2="${cardLeft + cardWidth}" y2="${OG.height}"
+        stroke="${SHELL}" stroke-opacity="0.38" stroke-width="1"/>
 </svg>`);
 
-/* Quality 84 lands this comfortably under the 300 kB WhatsApp will silently
-   refuse to render as a large card. The assertion below is the real guard. */
-const ogInfo = await sharp(photo)
-  .composite([{ input: overlay }])
-  .jpeg({ quality: 84, chromaSubsampling: '4:2:0', mozjpeg: true })
-  .toFile(out('og-steeja-arjun.jpg'));
+/* The filename carries `-garden` and that is load-bearing, not descriptive.
+   WhatsApp, iMessage and Facebook cache a preview against the og:image URL and
+   hold it for weeks; re-pointing this at the same path would leave every guest
+   who has already seen the link looking at the previous card indefinitely. A
+   new path is the only reliable way to break that, so a future replacement
+   should change this name again rather than overwrite this file. */
+const OG_FILE = 'og-steeja-arjun-garden.jpg';
+
+/* Quality 95 at full chroma resolution, which is high for a JPEG and is the
+   right call HERE specifically. The budget is 300 kB and the old text-on-photo
+   card spent 52 of it; this spends 109 and buys the only thing on the card that
+   is hard to see. The photograph occupies 420 of 1200 pixels, so every guest
+   reading this in a chat list is looking at the two of them at roughly a third
+   of the card's width — 4:2:0 throws away half the colour resolution across
+   exactly that region, and it shows first on her gown, which is a low-value
+   saturated rose that chroma subsampling smears into the background.
+   The assertion below is the real guard on size. */
+const ogInfo = await sharp(backdrop)
+  .composite([
+    { input: card, left: cardLeft, top: 0 },
+    { input: seams, left: 0, top: 0 },
+  ])
+  .jpeg({ quality: 95, chromaSubsampling: '4:4:4', mozjpeg: true })
+  .toFile(out(OG_FILE));
 
 const ogKb = ogInfo.size / 1024;
 if (ogKb > 290) {
   throw new Error(
-    `og-steeja-arjun.jpg is ${ogKb.toFixed(0)} kB. WhatsApp drops previews over ` +
+    `${OG_FILE} is ${ogKb.toFixed(0)} kB. WhatsApp drops previews over ` +
       '300 kB without saying so — lower the JPEG quality above.',
   );
 }
-console.log(`  og-steeja-arjun.jpg        ${ogInfo.width}x${ogInfo.height}  ${ogKb.toFixed(0)} kB`);
+
+/* The card is the one asset here whose dimensions are also written down
+   somewhere else — og:image:width and og:image:height in Base.astro, which
+   WhatsApp reads to decide between a large card and a small square thumbnail
+   BEFORE it has fetched the file. A silent disagreement between the two
+   demotes the preview, so this refuses to be the half that drifted. */
+if (ogInfo.width !== OG.width || ogInfo.height !== OG.height) {
+  throw new Error(
+    `${OG_FILE} came out ${ogInfo.width}x${ogInfo.height}, not ${OG.width}x${OG.height}. ` +
+      'og:image:width/height in src/layouts/Base.astro are hard-coded to the ' +
+      'latter and are what WhatsApp sizes the card from.',
+  );
+}
+console.log(`  ${OG_FILE}  ${ogInfo.width}x${ogInfo.height}  ${ogKb.toFixed(0)} kB` +
+  `  (photo ${cardWidth}x${OG.height} contained, ${cardLeft}px fill each side)`);
 
 /* -------------------------------------------------------------------------
    2. The monogram, and the icons cut from it

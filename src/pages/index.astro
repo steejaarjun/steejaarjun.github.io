@@ -44,8 +44,13 @@ const description =
 const ogTitle = 'Steeja & Arjun · 6 September 2026';
 const ogDescription = "We're getting married in Kerala. Come celebrate with us.";
 
+/* The same card as og:image, and it has to stay the same card — this is the
+   third place the filename appears (with Base.astro's `ogImage` default and
+   OG_FILE in scripts/make-brand-assets.mjs). Nothing checks that the three
+   agree; a stale name here does not break the page, it just tells Google a
+   different image from the one every chat thread shows. */
 const schema = weddingEventSchema(
-  absoluteUrl('og-steeja-arjun.jpg', site),
+  absoluteUrl('og-steeja-arjun-garden.jpg', site),
   absoluteUrl('', site),
 );
 

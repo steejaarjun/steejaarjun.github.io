@@ -8,7 +8,10 @@
  *
  * Indexable and shareable, unlike /admin: it carries no noindex, it is in the
  * sitemap, and it shares the home page's Open Graph card so a forwarded link
- * still previews as the invitation rather than as a bare URL.
+ * still previews as the photograph of the two of them rather than as a bare
+ * URL. It takes that card by inheritance — this page passes no `ogImage` and
+ * no `ogImageAlt`, so both come from the defaults in Base.astro, which is why
+ * changing the card there changes it here too.
  *
  * No hero. The photograph is the invitation's opening; this page is a form and
  * should start with the question.

@@ -9,12 +9,19 @@
  *  2. `EPW09695-phone.jpg` — the art-direction crop. Astro can resize but it
  *     cannot re-frame, and on a tall phone the full frame leaves the couple too
  *     small; a 4:5 master keeps them tight.
- *  3. `public/og-steeja-arjun.jpg` — a 1200x630 landscape crop for link
- *     previews. The portrait original is unusable there: WhatsApp and iMessage
- *     centre-crop it to a letterbox and cut both their heads off.
  *
- * Outputs 1 and 2 are committed, so CI never touches the original.
+ * Outputs are committed, so CI never touches the original.
  * Re-run with `npm run media` after replacing a source photo.
+ *
+ * The link preview card is NOT built here, and used to be. It was a fourth
+ * entry writing `public/og-steeja-arjun.jpg` — at the time, the very path
+ * scripts/make-brand-assets.mjs also wrote, from a different source with a
+ * different crop and no type on it. Two generators, one filename, no error:
+ * whichever script ran last won, so `npm run media` after `npm run brand`
+ * quietly replaced the composed card with a bare crop and nothing said so.
+ * The card belongs to make-brand-assets.mjs alone — it writes
+ * `public/og-steeja-arjun-garden.jpg` now, and a different name is not a
+ * reason to reintroduce this. Do not add it back here.
  */
 import { mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -67,16 +74,6 @@ const OUTPUTS = [
     crop: { left: 0, top: 900, width: 5760, height: 7200 },
     out: { width: MAX_WIDTH, height: 2400 },
     encode: { quality: 94, chromaSubsampling: '4:4:4' },
-  },
-  {
-    source: HERO,
-    file: 'public/og-steeja-arjun.jpg',
-    // 1.905:1 pulled in around the two of them.
-    crop: { left: 470, top: 2500, width: 4820, height: 2530 },
-    out: { width: 1200, height: 630 },
-    // Served as-is, so this is the final encode; 82 is where the wall stops
-    // banding.
-    encode: { quality: 82, chromaSubsampling: '4:2:0' },
   },
 ];
 
