@@ -267,18 +267,26 @@ because the crop windows are measured against that frame.
 
 ### The link preview card
 
-`public/og-steeja-arjun-garden.jpg` is **not** in the table above. It comes from
-`npm run brand` (`scripts/make-brand-assets.mjs`), not `npm run media`, and its
-source is `src/assets/photos/IMG_4764.jpg` — a 4000x6000 frame, so the
+`public/og-steeja-arjun-invitation.jpg` is **not** in the table above. It comes
+from `npm run brand` (`scripts/make-brand-assets.mjs`), not `npm run media`, and
+its source is `src/assets/photos/IMG_4764.jpg` — a 4000x6000 frame, so the
 5760x8640 assertion above does not apply to it.
 
 It is composed rather than cropped. The source is a 2:3 portrait and the card is
 1.905:1, so the photograph is *contained* at 420x630 — its full height, nothing
 cut, nothing stretched — and the 390px either side is the same photograph blown
 up to the card, blurred and darkened, so the panels carry the frame's own tones
-instead of reading as bars. There is no type on the card.
+instead of reading as bars. Over it goes a graded scrim and the invitation:
+the names, a thin ochre rule, the date and the place.
 
-Two things about it are easy to get wrong:
+**The type is what carries this card, not the photograph.** At 420 of 1200px the
+two of them are only about 90px across in a chat list. The type is sized so it
+survives that reduction instead — which is the whole reason the contain is
+affordable. If you change a size in that block, scale the output to 400px wide
+and look at it before believing it; the previous card's 30px date came out near
+10px and could not be read.
+
+Two more things about it are easy to get wrong:
 
 - **The filename is versioned, not fixed.** WhatsApp, iMessage and Facebook
   cache a preview against the og:image URL for weeks. Replacing the card means a

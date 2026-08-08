@@ -19,9 +19,10 @@
  * different crop and no type on it. Two generators, one filename, no error:
  * whichever script ran last won, so `npm run media` after `npm run brand`
  * quietly replaced the composed card with a bare crop and nothing said so.
- * The card belongs to make-brand-assets.mjs alone — it writes
- * `public/og-steeja-arjun-garden.jpg` now, and a different name is not a
- * reason to reintroduce this. Do not add it back here.
+ * The card belongs to make-brand-assets.mjs alone, and its filename is
+ * versioned there to break preview caches — so it will keep changing, and a
+ * name here that no longer matches is not evidence this should come back. Do
+ * not add it back.
  */
 import { mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';

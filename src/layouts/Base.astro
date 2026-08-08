@@ -52,7 +52,7 @@ const {
      The filename is versioned rather than fixed: see the note beside OG_FILE in
      scripts/make-brand-assets.mjs. Replacing the card means a NEW name here and
      there, because the caches that matter key on the URL. */
-  ogImage = 'og-steeja-arjun-garden.jpg',
+  ogImage = 'og-steeja-arjun-invitation.jpg',
   /* Written for someone who cannot see it, which rules out both "wedding
      photo" and a description of the composition. What is in the frame, in the
      order you would notice it. The blurred panels either side are the same
@@ -65,9 +65,14 @@ const {
      is 06:44, so it is morning), "mauve" (the gown samples at hue 344° — a
      rose, not a purple) and "lantern-lit trees" (the canopy samples at 11-15%
      value; it is dark, and the light is one globe lamp on a post at the
-     left). */
+     left).
+
+     The words SET ON the card are part of it and are read out last. They
+     repeat og:title and og:description, which is correct rather than
+     redundant: alt describes the image, and someone who cannot see it should
+     still learn that the date is printed on the thing being shared. */
   ogImageAlt =
-    'Steeja and Arjun standing close together on the grass in a garden, she in a long dusty-rose gown and he in a light grey suit over an open-collared white shirt, with a lit globe lamp glowing on its post behind them and dark trees beyond.',
+    'Steeja and Arjun standing close together on the grass in a garden, she in a long dusty-rose gown and he in a light grey suit over an open-collared white shirt. Their names are set large across the photograph, above a thin gold rule and the words: Sunday, 6 September 2026, Kerala, India.',
   ogTitle = title,
   ogDescription = description,
   schema,

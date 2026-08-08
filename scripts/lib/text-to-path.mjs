@@ -3,8 +3,8 @@
  *
  * WHY THIS EXISTS
  *
- * The favicon monogram has to be set in the site's own display face, and
- * cannot be: this toolchain will not
+ * The link-preview card and the favicon monogram both have to be set in the
+ * site's own display face, and neither can be: this toolchain will not
  * rasterise text in a font that is not installed on the machine. Three routes
  * were tried and all three fell back to the default serif *silently* — the
  * giveaway was that "Instrument Serif" and "serif" rendered to identical pixel
@@ -15,10 +15,8 @@
  *   · SVG @font-face with a base64 TTF data URI → ignored (librsvg)
  *
  * A silent fallback is the worst of the three outcomes, because the build
- * still succeeds and the wrong typeface only shows up on a home screen or a
- * browser tab once the invitations are out. (The link preview card was the
- * other caller and the louder reason for this; it carries no type at all
- * now — see section 1 of make-brand-assets.mjs.)
+ * still succeeds and the wrong typeface only shows up in a WhatsApp preview
+ * once the invitations are out.
  *
  * So no rasteriser is asked to find a font at all. The glyph outlines are read
  * out of the font file and emitted as SVG `<path d="…">`, which needs no font

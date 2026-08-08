@@ -6,13 +6,12 @@
  * this script running — but re-run it after changing the palette, the display
  * face or the source photograph, or the assets quietly stop matching the site.
  *
- * What text there is — the monogram on the icons — is set as SVG paths lifted
- * from the font's own outlines rather than rasterised by a text engine. See
- * scripts/lib/text-to-path.mjs for why: three separate font-loading routes were
- * tried and every one of them fell back to the system serif *without erroring*,
- * which would have shipped the wrong typeface to every home screen the site was
- * saved to. The link preview card carries no type at all now; it is the
- * photograph, composed to 1200x630 — see section 1.
+ * All text — the invitation on the link preview card, the monogram on the icons
+ * — is set as SVG paths lifted from the font's own outlines rather than
+ * rasterised by a text engine. See scripts/lib/text-to-path.mjs for why: three
+ * separate font-loading routes were tried and every one of them fell back to
+ * the system serif *without erroring*, which would have shipped the wrong
+ * typeface to every WhatsApp group the link is pasted into.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -42,6 +41,35 @@ const [regular, italic] = await Promise.all([
 const setRegular = openFont(regular);
 const setItalic = openFont(italic);
 
+/**
+ * "Steeja & Arjun" with an italic ampersand at 0.8em — the same construction as
+ * the top-bar monogram. It is the mark, not merely the two names, so the card
+ * and the icons are built from it rather than from plain text.
+ */
+function nameMark(size, centreX, baseline) {
+  const ampSize = size * 0.8;
+  const left = setRegular('Steeja ', size, 0, 0);
+  const amp = setItalic('&', ampSize, 0, 0);
+  const right = setRegular(' Arjun', size, 0, 0);
+
+  const total = left.width + amp.width + right.width;
+  let x = centreX - total / 2;
+
+  const d = [
+    setRegular('Steeja ', size, x, baseline).d,
+    setItalic('&', ampSize, (x += left.width), baseline).d,
+    setRegular(' Arjun', size, (x += amp.width), baseline).d,
+  ].join('');
+
+  return { d, width: total };
+}
+
+/** Centred, letter-spaced small caps line. */
+function centredLine(text, size, centreX, baseline, spacing) {
+  const measured = setRegular(text, size, 0, 0, spacing);
+  return setRegular(text, size, centreX - measured.width / 2, baseline, spacing).d;
+}
+
 /* -------------------------------------------------------------------------
    1. The link preview card, 1200x630
    ------------------------------------------------------------------------- */
@@ -70,11 +98,12 @@ const OG = { width: 1200, height: 630 };
    left. Under a 42px blur the distortion is not resolvable and the tonal range
    is what survives. Nothing about the CONTAINED photograph is stretched.
                                                                        .
-   Read the trade honestly before changing it: at 420 of 1200px the two of them
-   occupy about a third of the card's width, so in a WhatsApp thumbnail they are
-   roughly 90px across. A crop around their faces would be far more legible at
-   that size and is what this block used to do with a different photograph. Not
-   cropping is a decision about this image, not an oversight. */
+   The photograph is not what carries this card at thumbnail size — the TYPE is,
+   and that is what makes the contain affordable. At 420 of 1200px the two of
+   them are about 90px across in a chat list, too small to read as faces; the
+   names and the date are set large enough to survive the same reduction, so
+   nothing load-bearing depends on the photograph being legible. See the scrim
+   and the type block below. */
 const SOURCE = 'src/assets/photos/IMG_4764.jpg';
 
 const card = await sharp(resolve(root, SOURCE))
@@ -120,27 +149,94 @@ const seams = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${OG.w
         stroke="${SHELL}" stroke-opacity="0.38" stroke-width="1"/>
 </svg>`);
 
-/* The filename carries `-garden` and that is load-bearing, not descriptive.
+/* The scrim, and the invitation set over it.
+
+   TWO JOBS, PULLING OPPOSITE WAYS. The type is shell-white and has to hold at
+   the ~400px a chat list renders this at, which wants the ground as dark as
+   possible; the two of them have to stay visible, which wants it light. So the
+   scrim is not one value — it is a vertical ramp, weighted by what is at each
+   height. Their faces sit between 13% and 30% of the card and are held at
+   0.30-0.42, dark enough to sit back and light enough to read as people. From
+   44% down, where the type starts, it deepens to 0.88 and the photograph
+   becomes a texture. Warm rather than grey: a neutral wash turns the grass and
+   the lamp behind them muddy.
+
+   THE TYPE IS BIG ON PURPOSE, roughly 60% larger than the card this replaced.
+   The test is not how it looks here — it is how it looks reduced to 400px,
+   which is the only size most guests will ever see it at, and at that size the
+   old 30px date came out near 10px and could not be read. 58px is 19px there.
+   If you change a size in this block, scale the output to 400px wide and look
+   at it before believing it.
+
+   The block clears the faces deliberately: the names start at y 275 and their
+   chins are above y 200. */
+const NAME_SIZE = 200;
+const DATE_SIZE = 58;
+const PLACE_SIZE = 44;
+const CENTRE_X = OG.width / 2;
+
+const names = nameMark(NAME_SIZE, CENTRE_X, 415);
+
+/* 933 of 1200px at NAME_SIZE 200. Asserted because the failure is silent —
+   `nameMark` centres whatever width it computes, so an oversized face or a
+   longer string runs off both edges of the card rather than erroring. */
+if (names.width > OG.width - 120) {
+  throw new Error(
+    `The name mark is ${Math.round(names.width)}px wide at size ${NAME_SIZE}, ` +
+      `which leaves under 60px of margin on a ${OG.width}px card. Reduce NAME_SIZE.`,
+  );
+}
+
+const RULE_HALF = 150;
+const RULE_Y = 452;
+
+const overlay = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${OG.width}" height="${OG.height}">
+  <defs>
+    <linearGradient id="v" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="rgb(24,16,11)" stop-opacity="0.30"/>
+      <stop offset="18%"  stop-color="rgb(24,16,11)" stop-opacity="0.32"/>
+      <stop offset="32%"  stop-color="rgb(24,16,11)" stop-opacity="0.42"/>
+      <stop offset="44%"  stop-color="rgb(22,15,10)" stop-opacity="0.64"/>
+      <stop offset="62%"  stop-color="rgb(20,13,9)"  stop-opacity="0.80"/>
+      <stop offset="100%" stop-color="rgb(20,13,9)"  stop-opacity="0.88"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#v)"/>
+  <path d="${names.d}" fill="${SHELL}"/>
+  <path d="M${CENTRE_X - RULE_HALF} ${RULE_Y} H${CENTRE_X + RULE_HALF}"
+        stroke="${OCHRE}" stroke-width="3"/>
+  <path d="${centredLine('SUNDAY, 6 SEPTEMBER 2026', DATE_SIZE, CENTRE_X, 520, 6)}" fill="${SHELL}"/>
+  <path d="${centredLine('KERALA, INDIA', PLACE_SIZE, CENTRE_X, 575, 5)}"
+        fill="${SHELL}" fill-opacity="0.85"/>
+</svg>`);
+
+/* The filename is versioned and that is load-bearing, not descriptive.
    WhatsApp, iMessage and Facebook cache a preview against the og:image URL and
    hold it for weeks; re-pointing this at the same path would leave every guest
    who has already seen the link looking at the previous card indefinitely. A
    new path is the only reliable way to break that, so a future replacement
-   should change this name again rather than overwrite this file. */
-const OG_FILE = 'og-steeja-arjun-garden.jpg';
+   should change this name again rather than overwrite this file. It has already
+   been `og-steeja-arjun.jpg` and `og-steeja-arjun-garden.jpg`; neither is still
+   served, and that is intended. */
+const OG_FILE = 'og-steeja-arjun-invitation.jpg';
 
 /* Quality 95 at full chroma resolution, which is high for a JPEG and is the
-   right call HERE specifically. The budget is 300 kB and the old text-on-photo
-   card spent 52 of it; this spends 109 and buys the only thing on the card that
-   is hard to see. The photograph occupies 420 of 1200 pixels, so every guest
-   reading this in a chat list is looking at the two of them at roughly a third
-   of the card's width — 4:2:0 throws away half the colour resolution across
-   exactly that region, and it shows first on her gown, which is a low-value
-   saturated rose that chroma subsampling smears into the background.
-   The assertion below is the real guard on size. */
+   right call HERE specifically: this card is fine white type on a dark ground,
+   which is the worst case for a JPEG. 4:2:0 halves the colour resolution and
+   puts ringing along exactly the high-contrast edges the serif is made of, and
+   it shows first on the thin strokes and on the ochre rule — a 3px line whose
+   colour is the only chroma detail on the card. The budget is 300 kB and there
+   is no reason to leave it unspent. The assertion below is the real guard.
+
+   Composite order matters: backdrop, photograph, seams, THEN the scrim and type
+   over all three. The seams sit under the scrim so they are dimmed with
+   everything else — drawn on top they would cut two bright vertical lines
+   through the names. */
 const ogInfo = await sharp(backdrop)
   .composite([
     { input: card, left: cardLeft, top: 0 },
     { input: seams, left: 0, top: 0 },
+    { input: overlay, left: 0, top: 0 },
   ])
   .jpeg({ quality: 95, chromaSubsampling: '4:4:4', mozjpeg: true })
   .toFile(out(OG_FILE));
