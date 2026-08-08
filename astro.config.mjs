@@ -112,11 +112,7 @@ export default defineConfig({
       // the page and a Disallow in robots.txt as well — this is the third of
       // the three, and the only one that stops the URL being *advertised* in
       // the first place. `filter` receives absolute URLs.
-      // `/og-test-*` is TEMPORARY — three pages measuring which preview layout
-      // WhatsApp picks for a given og:image shape. They carry `noindex` too.
-      // Remove this clause along with the pages; see
-      // scripts/og-layout-experiment.mjs.
-      filter: (page) => !page.includes('/admin') && !page.includes('/og-test-'),
+      filter: (page) => !page.includes('/admin'),
     }),
   ],
   vite: {
