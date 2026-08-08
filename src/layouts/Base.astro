@@ -26,6 +26,14 @@ type Props = {
   /** Overrides the shared link-preview card. */
   ogImage?: string;
   ogImageAlt?: string;
+  /* The card's real pixel dimensions. These travel WITH `ogImage` and are not
+     decoration: WhatsApp reads them to size the preview before it has fetched
+     the file, so a page that overrides the image and leaves these at the
+     default is declaring a shape it does not serve. Kept as props rather than
+     derived because the card is in public/ and never passes through
+     astro:assets, so nothing in the build knows its size. */
+  ogImageWidth?: number;
+  ogImageHeight?: number;
   ogTitle?: string;
   ogDescription?: string;
   /* Structured data, serialised into one `script` block of type
@@ -73,6 +81,8 @@ const {
      still learn that the date is printed on the thing being shared. */
   ogImageAlt =
     'Steeja and Arjun standing close together on the grass in a garden, she in a long dusty-rose gown and he in a light grey suit over an open-collared white shirt. Their names are set large across the photograph, above a thin gold rule and the words: Sunday, 6 September 2026, Kerala, India.',
+  ogImageWidth = 1200,
+  ogImageHeight = 630,
   ogTitle = title,
   ogDescription = description,
   schema,
@@ -230,8 +240,8 @@ const fontFaces = [
     <meta property="og:image" content={ogImageUrl} />
     <meta property="og:image:secure_url" content={ogImageUrl} />
     <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image:width" content={String(ogImageWidth)} />
+    <meta property="og:image:height" content={String(ogImageHeight)} />
     <meta property="og:image:alt" content={ogImageAlt} />
 
     <meta name="twitter:card" content="summary_large_image" />
