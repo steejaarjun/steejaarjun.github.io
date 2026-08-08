@@ -21,7 +21,9 @@
     "astro": "astro",
     "media": "node scripts/prepare-media.mjs",
     "//brand": "Regenerates the link-preview card, the favicons, the touch icon and the manifest from the photo, the palette and the display font. Outputs are committed, so a deploy never runs this — re-run it after changing any of those three.",
-    "brand": "node scripts/make-brand-assets.mjs"
+    "brand": "node scripts/make-brand-assets.mjs",
+    "//invite": "The invitation as a standalone image the couple attach to a chat message — portrait 1080x1350, NOT an og:image and not part of the deployed site. Writes to share/, which is outside public/ so nothing new is served. Reads the times and venues from src/data/wedding.ts rather than repeating them, which is why it needs --experimental-strip-types to import a .ts on Node 22; drop the flag once the runtime strips types by default. Output is committed — re-run it after changing the schedule.",
+    "invite": "node --experimental-strip-types scripts/make-invitation-card.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
