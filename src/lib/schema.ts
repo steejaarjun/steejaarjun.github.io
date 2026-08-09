@@ -22,7 +22,7 @@ import {
   type WeddingEvent,
 } from '../data/wedding';
 
-/** '2026-09-06T15:30:00+05:30' — ISO 8601 with a real offset, as schema.org asks. */
+/** '2026-09-06T15:00:00+05:30' — ISO 8601 with a real offset, as schema.org asks. */
 function isoLocal(time: string): string {
   return `${WEDDING_DATE}T${time}:00${utcOffset()}`;
 }

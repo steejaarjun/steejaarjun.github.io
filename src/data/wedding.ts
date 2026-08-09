@@ -35,13 +35,13 @@ export const EVENTS: readonly WeddingEvent[] = [
   {
     id: 'mass',
     title: 'Wedding Mass',
-    start: '15:30',
+    start: '15:00',
     end: '17:00',
     venue: 'Ss. Gervasis & Prothasis Syro-Malabar Church',
     area: 'Akaparambu, Kerala, India',
     mapsLink: 'https://maps.app.goo.gl/qStCN1M2eFjjUjmz7',
     coords: null, // TODO: fill in { lat, lng }
-    note: 'Please be seated by 3:10 PM.',
+    note: 'Please be seated by 2:40 PM.',
   },
   {
     id: 'reception',
@@ -77,7 +77,7 @@ export function instantOf(time: string): Date {
 }
 
 /**
- * '15:30' -> '3:30 PM'. Every time on the page is written this way: it matches
+ * '15:00' -> '3:00 PM'. Every time on the page is written this way: it matches
  * the printed invitation, and a good share of the guest list will not thank us
  * for 24-hour clock arithmetic.
  */

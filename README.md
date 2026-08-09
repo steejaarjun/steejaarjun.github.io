@@ -318,10 +318,18 @@ before this was set.
 
 ## The two scripts
 
-**The countdown** (`Countdown.astro`) counts to `2026-09-06T15:30:00+05:30`. The
+**The countdown** (`Countdown.astro`) counts to `2026-09-06T15:00:00+05:30`. The
 IST offset is part of the literal on both sides — the frontmatter and the inline
 script use the same string — so guests in Switzerland and Kerala see the same
-number rather than one derived from their own clock. Values are rendered at build
+number rather than one derived from their own clock.
+
+That instant is the Wedding Mass, and it is written out here rather than read
+from `src/data/wedding.ts` — so the countdown, the RSVP form's mass question and
+the schedule can disagree, and nothing fails when they do. Moving the ceremony
+means editing four files, not one: `src/data/wedding.ts` (which the schedule,
+the venue cards, the JSON-LD and `/wedding.ics` all derive from), the two copies
+of the literal here, the visible `3:00 PM` beneath the digits, and the question
+text in `Rsvp.astro`. Grep for the old time before believing you are done. Values are rendered at build
 time and corrected synchronously by the script's first statement, so there is no
 dash to flash. It clamps at zero and clears its interval on arrival.
 

@@ -37,7 +37,7 @@ export const FAQ: readonly FaqItem[] = [
     id: 'arrival',
     question: 'What time should we arrive?',
     answer:
-      'Please be seated in the church by 3:10 PM — the ceremony begins shortly after. Do allow time for parking and the short walk, so you can settle in calmly before the service starts.',
+      'Please be seated in the church by 2:40 PM — the ceremony begins shortly after. Do allow time for parking and the short walk, so you can settle in calmly before the service starts.',
   },
   // "Can we take photos?" was removed on request. It was the only place the
   // church's no-phones-during-the-ceremony rule appeared, and that rule is now

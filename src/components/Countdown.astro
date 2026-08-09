@@ -5,7 +5,7 @@
  * where you open it is worse than no countdown — so the offset is part of the
  * literal, not left to the visitor's clock.
  */
-const TARGET_ISO = '2026-09-06T15:30:00+05:30';
+const TARGET_ISO = '2026-09-06T15:00:00+05:30';
 
 const UNITS = [
   { key: 'days', label: 'Days' },
@@ -66,7 +66,7 @@ const initial = remaining(new Date(TARGET_ISO).getTime() - Date.now());
 
     <div class="countdown__rule" aria-hidden="true"></div>
 
-    <p class="countdown__when">Sunday, 6 September 2026 &middot; 3:30 PM</p>
+    <p class="countdown__when">Sunday, 6 September 2026 &middot; 3:00 PM</p>
   </div>
 </section>
 
@@ -84,7 +84,7 @@ const initial = remaining(new Date(TARGET_ISO).getTime() - Date.now());
 
     // Same literal as the component frontmatter: an absolute instant, so every
     // guest sees the same number whatever their device clock is set to.
-    var target = new Date('2026-09-06T15:30:00+05:30').getTime();
+    var target = new Date('2026-09-06T15:00:00+05:30').getTime();
     var timer;
 
     function pad(n) {
